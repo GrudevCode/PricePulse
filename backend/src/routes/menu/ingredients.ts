@@ -56,8 +56,17 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
       return;
     }
     const db = getDb();
+    const d = parsed.data;
     const [ing] = await db.insert(schema.productIngredients)
-      .values({ productId: req.params.itemId, ...parsed.data })
+      .values({
+        productId: req.params.itemId,
+        name: d.name,
+        quantity: String(d.quantity),
+        unit: d.unit,
+        costPence: d.costPence,
+        displayOrder: d.displayOrder,
+        inventoryItemId: d.inventoryItemId ?? null,
+      })
       .returning();
     res.status(201).json({ success: true, data: ing });
   } catch (err) {
@@ -76,8 +85,25 @@ router.patch('/:ingId', requireAuth, async (req: AuthRequest, res: Response) => 
       return;
     }
     const db = getDb();
+    const patch = parsed.data;
+    const setData: {
+      updatedAt: Date;
+      name?: string;
+      displayOrder?: number;
+      unit?: string;
+      costPence?: number;
+      inventoryItemId?: string | null;
+      quantity?: string;
+    } = { updatedAt: new Date() };
+    if (patch.name !== undefined) setData.name = patch.name;
+    if (patch.displayOrder !== undefined) setData.displayOrder = patch.displayOrder;
+    if (patch.unit !== undefined) setData.unit = patch.unit;
+    if (patch.costPence !== undefined) setData.costPence = patch.costPence;
+    if (patch.inventoryItemId !== undefined) setData.inventoryItemId = patch.inventoryItemId;
+    if (patch.quantity !== undefined) setData.quantity = String(patch.quantity);
+
     const [ing] = await db.update(schema.productIngredients)
-      .set({ ...parsed.data, updatedAt: new Date() })
+      .set(setData)
       .where(and(
         eq(schema.productIngredients.id, req.params.ingId),
         eq(schema.productIngredients.productId, req.params.itemId),
