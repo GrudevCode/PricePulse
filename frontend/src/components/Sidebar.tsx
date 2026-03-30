@@ -36,8 +36,11 @@ function NavLink({
 
   return (
     <Link
-      to={item.href === '#' ? '#' : item.href}
-      onClick={(e) => item.href === '#' && e.preventDefault()}
+      to={item.href}
+      onClick={(e) => {
+        if (item.href !== '#' || item.comingSoon) return;
+        e.preventDefault();
+      }}
       className={cn(
         'group flex items-center px-2.5 py-2 rounded-md text-sm transition-all duration-150 relative',
         collapsed ? 'justify-center gap-0' : 'gap-2.5',
@@ -105,7 +108,7 @@ export function Sidebar({
   const isHotel = String(currentVenue?.cuisineType ?? '').toLowerCase() === 'hotel';
 
   function isActive(path: string) {
-    if (path === '#') return false;
+    if (path === '#' || path === '/venues/new') return false;
     return location.pathname === path || location.pathname.startsWith(path + '/');
   }
 
@@ -132,27 +135,27 @@ export function Sidebar({
     { icon: CalendarRange,        label: 'Menu Scheduler',     href: '/scheduler' },
 
     { divider: true, label: 'Booking' },
-    { icon: CalendarDays,         label: 'Booking Editor',     href: vid ? `/venues/${vid}/bookings` : '#' },
-    { icon: Database,             label: 'Booking Database',   href: vid ? `/venues/${vid}/booking-database` : '#' },
+    { icon: CalendarDays,         label: 'Booking Editor',     href: vid ? `/venues/${vid}/bookings` : '/venues/new' },
+    { icon: Database,             label: 'Booking Database',   href: vid ? `/venues/${vid}/booking-database` : '/venues/new' },
 
     { divider: true, label: 'Order' },
-    { icon: ClipboardList,        label: 'Order Editor',       href: vid ? `/venues/${vid}/orders` : '#' },
-    { icon: Database,             label: 'Order Database',     href: vid ? `/venues/${vid}/order-database` : '#' },
+    { icon: ClipboardList,        label: 'Order Editor',       href: vid ? `/venues/${vid}/orders` : '/venues/new' },
+    { icon: Database,             label: 'Order Database',     href: vid ? `/venues/${vid}/order-database` : '/venues/new' },
 
     { divider: true, label: 'Inventory' },
-    { icon: Package,              label: 'Inventory Editor',   href: vid ? `/venues/${vid}/inventory` : '#' },
-    { icon: Database,             label: 'Inventory Database', href: vid ? `/venues/${vid}/inventory-database` : '#' },
+    { icon: Package,              label: 'Inventory Editor',   href: vid ? `/venues/${vid}/inventory` : '/venues/new' },
+    { icon: Database,             label: 'Inventory Database', href: vid ? `/venues/${vid}/inventory-database` : '/venues/new' },
 
     { divider: true, label: 'System' },
     { icon: BedDouble,            label: 'Dynamic Room Analysis', href: vid ? `/venues/${vid}/rooms` : '#',  comingSoon: true, hotelOnly: true },
-    { icon: Link2,                label: 'Integrations',       href: vid ? `/venues/${vid}/integrations` : '#' },
+    { icon: Link2,                label: 'Integrations',       href: vid ? `/venues/${vid}/integrations` : '/venues/new' },
     { icon: HeadphonesIcon,       label: 'Support',            href: '/support' },
-    { icon: Settings,             label: 'Settings',           href: vid ? `/venues/${vid}/settings` : '#' },
+    { icon: Settings,             label: 'Settings',           href: vid ? `/venues/${vid}/settings` : '/venues/new' },
   ];
 
   return (
     <aside
-      className="shrink-0 border-r border-border flex flex-col bg-sidebar h-screen sticky top-0"
+      className="relative z-10 shrink-0 border-r border-border flex flex-col bg-sidebar h-screen sticky top-0"
       style={{ width }}
     >
       {/* Logo */}
@@ -218,7 +221,7 @@ export function Sidebar({
             <>
               <button
                 type="button"
-                onClick={() => vid && navigate(`/venues/${vid}/settings`)}
+                onClick={() => navigate(vid ? `/venues/${vid}/settings` : '/venues/new')}
                 className="flex items-center gap-2 flex-1 rounded-md hover:bg-secondary px-1 py-1 transition-colors"
               >
                 <span className="w-7 h-7 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-[11px] font-semibold text-primary mr-2">
