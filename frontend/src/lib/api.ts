@@ -1,7 +1,14 @@
 import axios from 'axios';
 
+/** Production: set VITE_BACKEND_ORIGIN to your API host, e.g. https://pricepulse-api.onrender.com (no trailing slash). */
+function apiBaseURL(): string {
+  const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
+  const origin = env?.VITE_BACKEND_ORIGIN?.replace(/\/$/, '');
+  return origin ? `${origin}/api` : '/api';
+}
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: apiBaseURL(),
   withCredentials: true,
 });
 

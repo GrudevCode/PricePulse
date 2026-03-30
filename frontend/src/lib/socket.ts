@@ -2,6 +2,12 @@ import { io, Socket } from 'socket.io-client';
 
 let socket: Socket | null = null;
 
+function socketOrigin(): string | undefined {
+  const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
+  const origin = env?.VITE_BACKEND_ORIGIN?.replace(/\/$/, '');
+  return origin || undefined;
+}
+
 /**
  * Returns the shared Socket.io instance.
  * Connects on first call; reuses on subsequent calls.
@@ -12,7 +18,8 @@ let socket: Socket | null = null;
  */
 export function getSocket(): Socket {
   if (!socket) {
-    socket = io('/', {
+    const url = socketOrigin();
+    socket = io(url ?? '/', {
       transports: ['websocket', 'polling'],
     });
 
