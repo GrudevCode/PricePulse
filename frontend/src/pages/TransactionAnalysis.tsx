@@ -53,6 +53,9 @@ function formatPence(v: number) {
   return `£${(v / 100).toFixed(2)}`;
 }
 
+/** Placeholder until POS tickets are wired into this view in production. */
+const MOCK_TRANSACTIONS: Transaction[] = [];
+
 // ── AI terminal placeholder ────────────────────────────────────────────────────
 function TransactionTerminal({ selected }: { selected: Transaction | null }) {
   return (

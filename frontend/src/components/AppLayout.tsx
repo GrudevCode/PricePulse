@@ -31,7 +31,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           return;
         }
         const sel = useVenueStore.getState().selectedVenueId;
-        if (!sel || !data.some((v) => v.id === sel)) {
+        if (!sel || !data.some((v: { id: string }) => v.id === sel)) {
           setSelectedVenue(data[0].id);
         }
       })

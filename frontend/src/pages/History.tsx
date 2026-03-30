@@ -21,7 +21,7 @@ export default function History() {
 
   const { data: decisions = [], isLoading } = useQuery({
     queryKey: ['pricing-history', venueId],
-    queryFn: () => pricingApi.history(venueId!).then((r) => r.data.data),
+    queryFn: () => pricingApi.allHistory(venueId!).then((r) => r.data.data),
     enabled: !!venueId,
   });
 

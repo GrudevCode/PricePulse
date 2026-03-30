@@ -83,7 +83,8 @@ export const menuApi = {
   updateItem:   (venueId: string, itemId: string, data: Record<string, unknown>) => api.patch(`/venues/${venueId}/menu-items/${itemId}`, data),
   delete:       (venueId: string, itemId: string) => api.delete(`/venues/${venueId}/menu-items/${itemId}`),
   deleteItem:   (venueId: string, itemId: string) => api.delete(`/venues/${venueId}/menu-items/${itemId}`),
-  bulkUpdate:   (venueId: string, data: Record<string, unknown>) => api.post(`/venues/${venueId}/menu-items/bulk-update`, data),
+  bulkUpdate:   (venueId: string, updates: Array<{ id: string; currentPrice: number }>) =>
+    api.post(`/venues/${venueId}/menu-items/bulk-update`, { updates }),
 };
 
 /** Menu definitions (menu containers, not items) */
@@ -163,7 +164,8 @@ export const scheduleApi = {
 export const bookingApi = {
   tables:         (venueId: string) => api.get(`/venues/${venueId}/tables`),
   list:           (venueId: string, params?: Record<string, unknown>) => api.get(`/venues/${venueId}/bookings`, { params }),
-  bookingsByDate: (venueId: string, date: string) => api.get(`/venues/${venueId}/bookings`, { params: { date } }),
+  bookingsByDate: (venueId: string, date?: string) =>
+    api.get(`/venues/${venueId}/bookings`, { params: date ? { date } : undefined }),
   bookingState:   (venueId: string, date: string) => api.get(`/venues/${venueId}/booking-state`, { params: { date } }),
   createBooking:  (venueId: string, data: Record<string, unknown>) => api.post(`/venues/${venueId}/bookings`, data),
   updateBooking:  (venueId: string, bookingId: string, data: Record<string, unknown>) => api.patch(`/venues/${venueId}/bookings/${bookingId}`, data),
