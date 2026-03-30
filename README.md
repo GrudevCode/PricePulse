@@ -1,4 +1,4 @@
-# PricePulse 🚀
+# PricePulse
 
 AI-powered dynamic pricing engine for bars, restaurants, and hospitality venues. Claude reasons across live real-world signals and recommends real-time price adjustments pushed directly to your digital menu.
 
