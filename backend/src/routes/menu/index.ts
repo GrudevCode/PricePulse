@@ -8,6 +8,13 @@ import { getMenuItemIngredientStockMap } from '../../lib/ingredientStock';
 
 const router = Router({ mergeParams: true });
 
+const imageUrlSchema = z
+  .string()
+  .trim()
+  .refine((v) => /^https?:\/\//i.test(v) || /^data:image\//i.test(v), {
+    message: 'Image must be a valid URL or data:image payload',
+  });
+
 const createItemSchema = z.object({
   name: z.string().min(1).max(255),
   category: z.string().min(1).max(100).default('Other'),
@@ -16,6 +23,8 @@ const createItemSchema = z.object({
   minPrice: z.number().int().positive().optional(),
   maxPrice: z.number().int().positive().optional(),
   description: z.string().optional(),
+  imageUrl: imageUrlSchema.optional(),
+  displayImage: z.boolean().optional(),
   isDynamicPricingEnabled: z.boolean().default(true),
 });
 
@@ -32,6 +41,8 @@ const updateItemSchema = z.object({
   isAvailable: z.boolean().optional(),
   intelligentInventorySync: z.boolean().optional(),
   description: z.string().optional(),
+  imageUrl: imageUrlSchema.nullable().optional(),
+  displayImage: z.boolean().optional(),
 });
 
 // GET /api/venues/:id/menu-items

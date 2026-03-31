@@ -13,6 +13,7 @@ export interface MenuPreviewItemRow {
   currentPrice: number;
   intelligentlyHidden?: boolean;
   imageUrl?: string | null;
+  displayImage?: boolean;
   isAvailable?: boolean;
 }
 
@@ -48,7 +49,17 @@ function PreviewProductItem({ product }: { product: MenuPreviewItemRow }) {
   return (
     <div className="px-4 py-3">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-[13px] font-semibold leading-snug text-gray-900">{product.name}</span>
+        <div className="flex min-w-0 items-center gap-2.5">
+          {product.displayImage !== false && /^https?:\/\//i.test(product.imageUrl?.trim() ?? '') && (
+            <img
+              src={product.imageUrl!.trim()}
+              alt=""
+              loading="lazy"
+              className="h-9 w-9 shrink-0 rounded object-cover ring-1 ring-gray-200"
+            />
+          )}
+          <span className="truncate text-[13px] font-semibold leading-snug text-gray-900">{product.name}</span>
+        </div>
         <span className="shrink-0 whitespace-nowrap tabular-nums text-[13px] font-semibold text-gray-900">
           {formatPence(product.currentPrice)}
         </span>
@@ -72,7 +83,7 @@ function FastFoodMenuCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const raw = product.imageUrl?.trim() ?? '';
-  const imgOk = /^https?:\/\//i.test(raw);
+  const imgOk = product.displayImage !== false && /^https?:\/\//i.test(raw);
 
   return (
     <article

@@ -41,6 +41,8 @@ interface MenuItem {
   description?: string | null;
   /** Public menu / card background when set */
   imageUrl?: string | null;
+  /** Whether the image should be rendered in guest previews/public menu */
+  displayImage?: boolean;
   basePrice: number;
   currentPrice: number;
   minPrice: number;
@@ -621,6 +623,8 @@ function EditMasterProductModal({
   const [name,               setName]               = useState(item.name);
   const [description,        setDescription]        = useState(item.description ?? '');
   const [popupDescription,   setPopupDescription]   = useState('');
+  const [imageUrl,           setImageUrl]           = useState(item.imageUrl ?? '');
+  const [displayImage,       setDisplayImage]       = useState(item.displayImage !== false);
   const [outOfStock,         setOutOfStock]         = useState(item.isAvailable === false);
   const [intelligentSync,    setIntelligentSync]    = useState(item.intelligentInventorySync === true);
   const [masterFormat,       setMasterFormat]       = useState('dish');
@@ -648,13 +652,15 @@ function EditMasterProductModal({
   useEffect(() => {
     setName(item.name);
     setDescription(item.description ?? '');
+    setImageUrl(item.imageUrl ?? '');
+    setDisplayImage(item.displayImage !== false);
     setOutOfStock(item.isAvailable === false);
     setIntelligentSync(item.intelligentInventorySync === true);
     setUnitCost(item.basePrice ? (item.basePrice / 100 * 0.3).toFixed(2) : '');
     setMinPrice(item.minPrice ? (item.minPrice / 100).toFixed(2) : '');
     setReferencePrice(item.currentPrice ? (item.currentPrice / 100).toFixed(2) : '');
     setMaxPrice(item.maxPrice ? (item.maxPrice / 100).toFixed(2) : '');
-  }, [item.id, item.name, item.description, item.isAvailable, item.intelligentInventorySync, item.basePrice, item.currentPrice, item.minPrice, item.maxPrice]);
+  }, [item.id, item.name, item.description, item.imageUrl, item.displayImage, item.isAvailable, item.intelligentInventorySync, item.basePrice, item.currentPrice, item.minPrice, item.maxPrice]);
 
   async function handleSave() {
     const trimmedName = name.trim();
@@ -685,6 +691,8 @@ function EditMasterProductModal({
       const res = await menuApi.update(venueId, item.id, {
         name: trimmedName,
         description: description.trim() || undefined,
+        imageUrl: imageUrl.trim() || null,
+        displayImage,
         currentPrice: refPence,
         basePrice: refPence,
         minPrice: minPence,
@@ -702,6 +710,23 @@ function EditMasterProductModal({
     } finally {
       setSaving(false);
     }
+  }
+
+  function handlePickImage(file: File | null) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image file');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+      if (!dataUrl) return;
+      setImageUrl(dataUrl);
+      setDisplayImage(true);
+    };
+    reader.onerror = () => toast.error('Failed to read image file');
+    reader.readAsDataURL(file);
   }
 
   return (
@@ -736,6 +761,46 @@ function EditMasterProductModal({
             <FieldRow label={`Description (${lang.toUpperCase()})`} hint="Description of the product displayed under the name">
               <Input value={description} onChange={(e) => setDescription(e.target.value)} className="h-9 text-sm" />
             </FieldRow>
+          </div>
+
+          {/* ── Product image ─────────────────────────────────────────────── */}
+          <div>
+            <FieldRow
+              label="Dish image"
+              hint="Paste an image URL or upload a photo. This image is used in menu preview/public cards."
+            >
+              <div className="space-y-2">
+                <Input
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://... or data:image/..."
+                  className="h-9 text-sm"
+                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handlePickImage(e.target.files?.[0] ?? null)}
+                    className="block w-full text-xs text-muted-foreground file:mr-2 file:rounded-md file:border file:border-border file:bg-secondary file:px-2.5 file:py-1.5 file:text-xs file:text-foreground hover:file:bg-secondary/80"
+                  />
+                  {imageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setImageUrl('')}
+                      className="px-2 py-1 text-xs border border-border rounded-md hover:bg-secondary transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+            </FieldRow>
+            <SettingsToggle
+              label="Display image in menu"
+              description="Turn off to keep the image saved but hide it from menu preview/public menu"
+              value={displayImage}
+              onChange={setDisplayImage}
+            />
           </div>
 
           {/* ── Popup description ────────────────────────────────────────── */}
@@ -912,14 +977,21 @@ const SALES_FORMATS = ['Dish', 'Sharing plate', 'Set menu', 'Takeaway', 'À la c
 
 function ProductSettingsModal({
   item,
+  venueId,
   onClose,
   onEditMaster,
+  onSaved,
 }: {
   item: MenuItem;
+  venueId: string;
   onClose: () => void;
   onEditMaster?: () => void;
+  onSaved?: (updated: MenuItem) => void;
 }) {
-  const [isVisible,        setIsVisible]        = useState(true);
+  const qc = useQueryClient();
+  const [isVisible,        setIsVisible]        = useState(item.isAvailable !== false);
+  const [imageUrl,         setImageUrl]         = useState(item.imageUrl ?? '');
+  const [displayImage,     setDisplayImage]     = useState(item.displayImage !== false);
   const [isSpecial,        setIsSpecial]        = useState(false);
   const [specialDesc,      setSpecialDesc]      = useState(false);
   const [showVideo,        setShowVideo]        = useState(false);
@@ -929,6 +1001,7 @@ function ProductSettingsModal({
   const [ageVerification,  setAgeVerification]  = useState(false);
   const [trackInventory,   setTrackInventory]   = useState(false);
   const [salesFormats, setSalesFormats] = useState<string[]>(['Dish']);
+  const [saving, setSaving] = useState(false);
 
   function toggleFormat(f: string) {
     setSalesFormats((prev) =>
@@ -936,9 +1009,47 @@ function ProductSettingsModal({
     );
   }
 
-  function handleSave() {
-    toast.success('Product settings saved');
-    onClose();
+  useEffect(() => {
+    setIsVisible(item.isAvailable !== false);
+    setImageUrl(item.imageUrl ?? '');
+    setDisplayImage(item.displayImage !== false);
+  }, [item.id, item.isAvailable, item.imageUrl, item.displayImage]);
+
+  function handlePickImage(file: File | null) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image file');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+      if (!dataUrl) return;
+      setImageUrl(dataUrl);
+      setDisplayImage(true);
+    };
+    reader.onerror = () => toast.error('Failed to read image file');
+    reader.readAsDataURL(file);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const res = await menuApi.update(venueId, item.id, {
+        isAvailable: isVisible,
+        imageUrl: imageUrl.trim() || null,
+        displayImage,
+      });
+      const updated: MenuItem = res.data.data;
+      await qc.invalidateQueries({ queryKey: ['menu-items', venueId] });
+      onSaved?.(updated);
+      toast.success('Product settings saved');
+      onClose();
+    } catch (err) {
+      toastApiError(err, 'Failed to save product settings');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -976,6 +1087,43 @@ function ProductSettingsModal({
             description="Show this product when the menu is live or viewed by guests"
             value={isVisible}
             onChange={setIsVisible}
+          />
+
+          <FieldRow
+            label="Dish image"
+            hint="Paste image URL or upload from your device"
+          >
+            <div className="space-y-2">
+              <Input
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="https://..."
+                className="h-9 text-sm"
+              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handlePickImage(e.target.files?.[0] ?? null)}
+                  className="block w-full text-xs text-muted-foreground file:mr-2 file:rounded-md file:border file:border-border file:bg-secondary file:px-2.5 file:py-1.5 file:text-xs file:text-foreground hover:file:bg-secondary/80"
+                />
+                {imageUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setImageUrl('')}
+                    className="px-2 py-1 text-xs border border-border rounded-md hover:bg-secondary transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+          </FieldRow>
+          <SettingsToggle
+            label="Display image in menu"
+            description="Keep image saved but hide/show it in guest menu preview"
+            value={displayImage}
+            onChange={setDisplayImage}
           />
 
           <SettingsToggle
@@ -1072,10 +1220,11 @@ function ProductSettingsModal({
             Cancel
           </button>
           <button
-            onClick={handleSave}
+            onClick={() => void handleSave()}
+            disabled={saving}
             className="px-4 py-1.5 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
           >
-            Confirm
+            {saving ? 'Saving…' : 'Confirm'}
           </button>
         </div>
       </div>
@@ -1549,7 +1698,9 @@ function ProductTable({ items, stockHiddenItems = [], onClickItem, venueId, onPr
       {settingsItem && (
         <ProductSettingsModal
           item={settingsItem}
+          venueId={venueId}
           onClose={() => setSettingsItem(null)}
+          onSaved={(updated) => setSettingsItem(updated)}
           onEditMaster={() => { setSettingsItem(null); setMasterItem(settingsItem); }}
         />
       )}
@@ -2392,7 +2543,9 @@ function ProductDetailView({
       {showProdSettings && (
         <ProductSettingsModal
           item={item}
+          venueId={venueId}
           onClose={() => setShowProdSettings(false)}
+          onSaved={(updated) => onProductUpdated(updated)}
           onEditMaster={() => { setShowProdSettings(false); setShowMasterModal(true); }}
         />
       )}

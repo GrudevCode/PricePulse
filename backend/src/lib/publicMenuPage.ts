@@ -192,7 +192,7 @@ function cssUrlEscape(url: string): string {
 
 function fastFoodItemCard(item: MenuItemRow, categoryName: string, categoryId: string, brandColor: string): string {
   const raw = item.imageUrl?.trim() ?? '';
-  const imgOk = /^https?:\/\//i.test(raw);
+  const imgOk = item.displayImage !== false && /^https?:\/\//i.test(raw);
   const bgStyle = imgOk ? `background-image:url('${cssUrlEscape(raw)}');` : '';
   const noImgClass = imgOk ? '' : ' ff-card-bg--placeholder';
   const un = !item.isAvailable ? ' ff-card--unavailable' : '';
@@ -568,6 +568,7 @@ export function publicMenuToJsonPayload(
     description: item.description,
     isAvailable: item.isAvailable,
     imageUrl: item.imageUrl,
+    displayImage: item.displayImage,
   });
 
   if (built.mode === 'legacy') {

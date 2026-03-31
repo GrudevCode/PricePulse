@@ -149,6 +149,7 @@ export const menuItems = pgTable('menu_items', {
   maxPrice:                integer('max_price').notNull(),
   description:             text('description'),
   imageUrl:                text('image_url'),
+  displayImage:            boolean('display_image').notNull().default(true),
   displayOrder:            integer('display_order').notNull().default(0),
   isAvailable:             boolean('is_available').notNull().default(true),
   /** When true, out-of-stock from linked ingredients hides item in editor preview & public menu */
