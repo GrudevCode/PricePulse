@@ -20,6 +20,7 @@ const menuSchema = z.object({
   displayOrder: z.number().int().default(0),
   scheduleJson: z.array(schedulePeriodSchema).default([]),
   color:        z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
+  designConfig: z.record(z.unknown()).optional().nullable(),
 });
 
 // GET /api/venues/:id/menus

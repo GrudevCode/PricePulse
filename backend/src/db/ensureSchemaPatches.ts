@@ -11,4 +11,7 @@ export async function ensureSchemaPatches(pool: Pool): Promise<void> {
   await pool.query(`
     ALTER TABLE venues ADD COLUMN IF NOT EXISTS public_menu_style varchar(32) NOT NULL DEFAULT 'gourmet'
   `);
+  await pool.query(`
+    ALTER TABLE menus ADD COLUMN IF NOT EXISTS design_config jsonb
+  `);
 }

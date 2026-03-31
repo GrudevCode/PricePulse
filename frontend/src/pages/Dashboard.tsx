@@ -21,6 +21,7 @@ import {
 import { cn, formatPence } from '@/lib/utils';
 import { Plus, ArrowLeft, Eye, Palette, Wrench, Pencil, Trash2, X, UtensilsCrossed, Flame, Package, QrCode } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { MenuDesignStudio, type MenuDesignConfig } from '@/components/dashboard/MenuDesignStudio';
 
 function toastApiError(err: unknown, fallback: string) {
   if (axios.isAxiosError(err) && err.response?.data && typeof (err.response.data as { error?: string }).error === 'string') {
@@ -58,6 +59,7 @@ interface MenuDef {
   name: string;
   description: string | null;
   isActive: boolean;
+  designConfig?: MenuDesignConfig | null;
 }
 
 interface DbCategory {
@@ -1100,6 +1102,7 @@ function MenuRow({
   onSettings,
   onRename,
   onDelete,
+  onDesign,
 }: {
   menu: MenuDef;
   onView: () => void;
@@ -1108,6 +1111,7 @@ function MenuRow({
   onSettings: () => void;
   onRename: () => void;
   onDelete: () => void;
+  onDesign: () => void;
 }) {
   return (
     <div className="flex items-center border-b border-border last:border-0 hover:bg-secondary/20 transition-colors cursor-pointer group" onClick={onView}>
@@ -1129,7 +1133,7 @@ function MenuRow({
           >
             <QrCode className="h-[17px] w-[17px]" />
           </button>
-          <button onClick={() => toast.info('Design menu')} title="Design" className="text-muted-foreground hover:text-foreground transition-colors"><Palette className="h-[17px] w-[17px]" /></button>
+          <button onClick={onDesign} title="Design" className="text-muted-foreground hover:text-foreground transition-colors"><Palette className="h-[17px] w-[17px]" /></button>
           <button onClick={onSettings} title="Settings" className="text-muted-foreground hover:text-foreground transition-colors"><Wrench className="h-[17px] w-[17px]" /></button>
           <button onClick={onRename} title="Rename" className="text-muted-foreground hover:text-foreground transition-colors"><Pencil className="h-[17px] w-[17px]" /></button>
           <button
@@ -2712,6 +2716,7 @@ export default function Dashboard() {
   const [renamingMenu,    setRenamingMenu]    = useState<MenuDef | null>(null);
   const [deletingMenu,    setDeletingMenu]    = useState<MenuDef | null>(null);
   const [settingsMenu,    setSettingsMenu]    = useState<MenuDef | null>(null);
+  const [designingMenu,   setDesigningMenu]   = useState<MenuDef | null>(null);
   const [previewMenu,     setPreviewMenu]     = useState<MenuDef | null>(null);
   const [showMenuStyleModal, setShowMenuStyleModal] = useState(false);
   const [showNewCategory, setShowNewCategory] = useState(false);
@@ -2956,6 +2961,7 @@ export default function Dashboard() {
                       onSettings={() => setSettingsMenu(menu)}
                       onRename={() => setRenamingMenu(menu)}
                       onDelete={() => setDeletingMenu(menu)}
+                      onDesign={() => setDesigningMenu(menu)}
                     />
                   ))}
                 </div>
@@ -3157,6 +3163,15 @@ export default function Dashboard() {
           menu={settingsMenu}
           venueId={selectedVenueId!}
           onClose={() => setSettingsMenu(null)}
+        />
+      )}
+
+      {/* ── Menu Design Studio ── */}
+      {designingMenu && selectedVenueId && (
+        <MenuDesignStudio
+          venueId={selectedVenueId}
+          menu={designingMenu}
+          onClose={() => setDesigningMenu(null)}
         />
       )}
 

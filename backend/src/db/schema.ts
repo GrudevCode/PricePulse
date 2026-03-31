@@ -112,6 +112,7 @@ export const menus = pgTable('menus', {
   displayOrder: integer('display_order').notNull().default(0),
   scheduleJson: jsonb('schedule_json').notNull().default([]),
   color:        varchar('color', { length: 7 }).default('#6366f1'),
+  designConfig: jsonb('design_config'),
   createdAt:    timestamp('created_at').defaultNow().notNull(),
   updatedAt:    timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
