@@ -33,6 +33,11 @@ interface DbCategory {
 
 export type MenuPreviewStyle = 'gourmet' | 'fast_food';
 
+function isRenderableImage(value?: string | null): boolean {
+  const raw = value?.trim() ?? '';
+  return /^https?:\/\//i.test(raw) || /^data:image\//i.test(raw);
+}
+
 function PreviewProductItem({ product }: { product: MenuPreviewItemRow }) {
   const { data: names = [] } = useQuery<string[]>({
     queryKey: ['preview-ingredients', product.id],
@@ -50,7 +55,7 @@ function PreviewProductItem({ product }: { product: MenuPreviewItemRow }) {
     <div className="px-4 py-3">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          {product.displayImage !== false && /^https?:\/\//i.test(product.imageUrl?.trim() ?? '') && (
+          {product.displayImage !== false && isRenderableImage(product.imageUrl) && (
             <img
               src={product.imageUrl!.trim()}
               alt=""
@@ -83,7 +88,7 @@ function FastFoodMenuCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const raw = product.imageUrl?.trim() ?? '';
-  const imgOk = product.displayImage !== false && /^https?:\/\//i.test(raw);
+  const imgOk = product.displayImage !== false && isRenderableImage(raw);
 
   return (
     <article

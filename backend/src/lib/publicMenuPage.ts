@@ -192,7 +192,7 @@ function cssUrlEscape(url: string): string {
 
 function fastFoodItemCard(item: MenuItemRow, categoryName: string, categoryId: string, brandColor: string): string {
   const raw = item.imageUrl?.trim() ?? '';
-  const imgOk = item.displayImage !== false && /^https?:\/\//i.test(raw);
+  const imgOk = item.displayImage !== false && (/^https?:\/\//i.test(raw) || /^data:image\//i.test(raw));
   const bgStyle = imgOk ? `background-image:url('${cssUrlEscape(raw)}');` : '';
   const noImgClass = imgOk ? '' : ' ff-card-bg--placeholder';
   const un = !item.isAvailable ? ' ff-card--unavailable' : '';
