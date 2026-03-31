@@ -32,6 +32,7 @@ interface DbCategory {
 }
 
 export type MenuPreviewStyle = 'gourmet' | 'fast_food';
+const PLATFORM_ORANGE = '#D25F2A';
 
 function isRenderableImage(value?: string | null): boolean {
   const raw = value?.trim() ?? '';
@@ -62,7 +63,7 @@ function PreviewProductItem({ product }: { product: MenuPreviewItemRow }) {
               alt=""
               loading="lazy"
               onError={() => setImgFailed(true)}
-              className="h-9 w-9 shrink-0 rounded object-cover ring-1 ring-gray-200"
+              className="h-11 w-11 shrink-0 rounded-md object-cover ring-1 ring-gray-200"
             />
           )}
           <span className="truncate text-[13px] font-semibold leading-snug text-gray-900">{product.name}</span>
@@ -75,6 +76,15 @@ function PreviewProductItem({ product }: { product: MenuPreviewItemRow }) {
       {product.description && (
         <p className="mt-0.5 text-[11px] italic leading-snug text-gray-400">{product.description}</p>
       )}
+      <div className="mt-2">
+        <button
+          type="button"
+          className="inline-flex h-7 items-center rounded-full px-3 text-[11px] font-semibold text-white"
+          style={{ backgroundColor: PLATFORM_ORANGE }}
+        >
+          Add to cart
+        </button>
+      </div>
     </div>
   );
 }
@@ -134,7 +144,9 @@ function FastFoodMenuCard({
           {categoryName}
         </span>
         <div className="mb-1.5 flex items-start justify-between gap-2.5">
-          <h3 className="m-0 flex-1 text-base font-extrabold leading-snug text-white">{product.name}</h3>
+          <h3 className="m-0 min-w-0 flex-1 break-words text-base font-extrabold leading-snug text-white line-clamp-2">
+            {product.name}
+          </h3>
           <span
             className="shrink-0 rounded-full px-3 py-1.5 text-sm font-extrabold tabular-nums text-white"
             style={{ backgroundColor: accentColor }}
@@ -146,7 +158,7 @@ function FastFoodMenuCard({
           <p
             className={cn(
               'mb-2 text-xs leading-snug text-white/90',
-              expanded ? '' : 'line-clamp-3',
+              expanded ? 'line-clamp-4' : 'line-clamp-2',
             )}
           >
             {product.description}
@@ -154,14 +166,23 @@ function FastFoodMenuCard({
         ) : (
           <div className="mb-1" />
         )}
-        <button
-          type="button"
-          onClick={() => setExpanded((e) => !e)}
-          className="inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-xs font-semibold text-indigo-300"
-        >
-          <span>{expanded ? 'Hide details' : 'Show details'}</span>
-          <span className="text-[9px] opacity-90">{expanded ? '▲' : '▼'}</span>
-        </button>
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setExpanded((e) => !e)}
+            className="inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-xs font-semibold text-orange-200"
+          >
+            <span>{expanded ? 'Hide details' : 'Show details'}</span>
+            <span className="text-[9px] opacity-90">{expanded ? '▲' : '▼'}</span>
+          </button>
+          <button
+            type="button"
+            className="inline-flex h-7 items-center rounded-full px-3 text-[11px] font-semibold text-white"
+            style={{ backgroundColor: PLATFORM_ORANGE }}
+          >
+            Add to cart
+          </button>
+        </div>
       </div>
     </article>
   );
@@ -179,7 +200,7 @@ export function MenuPreviewContent({
   venueName,
   menuData,
   menuStyle = 'gourmet',
-  accentColor = '#6366f1',
+  accentColor = PLATFORM_ORANGE,
 }: {
   menu: MenuPreviewMenuMeta;
   venueId: string;
@@ -253,6 +274,7 @@ export function MenuPreviewContent({
   }
 
   const isFf = menuStyle === 'fast_food';
+  const previewAccent = PLATFORM_ORANGE;
 
   if (isFf) {
     return (
@@ -274,7 +296,7 @@ export function MenuPreviewContent({
           </div>
           <span
             className="mt-2.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-            style={{ backgroundColor: `${accentColor}18`, color: accentColor }}
+            style={{ backgroundColor: `${previewAccent}18`, color: previewAccent }}
           >
             <span className="size-1.5 rounded-full bg-emerald-500" />
             Live pricing
@@ -316,7 +338,7 @@ export function MenuPreviewContent({
                     'shrink-0 rounded-full px-[18px] py-2.5 text-[13px] font-semibold transition-colors',
                     ffFilter === 'all' ? 'text-white' : 'bg-transparent text-stone-500',
                   )}
-                  style={ffFilter === 'all' ? { backgroundColor: accentColor } : undefined}
+                    style={ffFilter === 'all' ? { backgroundColor: previewAccent } : undefined}
                 >
                   All items
                 </button>
@@ -329,7 +351,7 @@ export function MenuPreviewContent({
                       'shrink-0 rounded-full px-[18px] py-2.5 text-[13px] font-semibold transition-colors',
                       ffFilter === cat.id ? 'text-white' : 'bg-transparent text-stone-500',
                     )}
-                    style={ffFilter === cat.id ? { backgroundColor: accentColor } : undefined}
+                    style={ffFilter === cat.id ? { backgroundColor: previewAccent } : undefined}
                   >
                     {cat.name}
                   </button>
@@ -366,7 +388,7 @@ export function MenuPreviewContent({
                   key={product.id}
                   product={product}
                   categoryName={cat.name}
-                  accentColor={accentColor}
+                  accentColor={previewAccent}
                 />
               ));
             })}
