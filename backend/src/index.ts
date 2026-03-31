@@ -38,11 +38,17 @@ const httpServer = createServer(app);
 app.use(helmet({ contentSecurityPolicy: false }));
 const _allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
   .split(',').map((o) => o.trim()).filter(Boolean);
+// Optional regex for dynamic origins like Vercel preview URLs
+// e.g. CORS_ORIGIN_REGEX=https://price-pulse-.*\.vercel\.app
+const _originRegex = process.env.CORS_ORIGIN_REGEX
+  ? new RegExp(process.env.CORS_ORIGIN_REGEX)
+  : null;
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow server-to-server requests (no Origin header) and listed origins
-    if (!origin || _allowedOrigins.includes(origin)) return cb(null, true);
+    if (!origin) return cb(null, true);
+    if (_allowedOrigins.includes(origin)) return cb(null, true);
+    if (_originRegex && _originRegex.test(origin)) return cb(null, true);
     cb(new Error(`CORS: origin "${origin}" not allowed`));
   },
   credentials: true,

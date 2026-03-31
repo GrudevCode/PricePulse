@@ -7,11 +7,16 @@ let io: SocketIoServer;
 export function initSocket(httpServer: HttpServer): SocketIoServer {
   const _wsOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
     .split(',').map((o) => o.trim()).filter(Boolean);
+  const _wsOriginRegex = process.env.CORS_ORIGIN_REGEX
+    ? new RegExp(process.env.CORS_ORIGIN_REGEX)
+    : null;
 
   io = new SocketIoServer(httpServer, {
     cors: {
       origin: (origin, cb) => {
-        if (!origin || _wsOrigins.includes(origin)) return cb(null, true);
+        if (!origin) return cb(null, true);
+        if (_wsOrigins.includes(origin)) return cb(null, true);
+        if (_wsOriginRegex && _wsOriginRegex.test(origin)) return cb(null, true);
         cb(new Error(`WS CORS: origin "${origin}" not allowed`));
       },
       credentials: true,
