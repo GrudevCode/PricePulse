@@ -167,6 +167,32 @@ router.put('/:id', requireAuth, requireVenueAccess, async (req: AuthRequest, res
   }
 });
 
+// PATCH /api/venues/:id — partial update (publicMenuStyle, brandColor, etc.)
+router.patch('/:id', requireAuth, requireVenueAccess, async (req: AuthRequest, res: Response) => {
+  try {
+    const parsed = createVenueSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ success: false, error: parsed.error.errors[0].message });
+      return;
+    }
+
+    const db = getDb();
+    const updateData: Record<string, unknown> = { ...parsed.data, updatedAt: new Date() };
+    if (parsed.data.lat !== undefined) updateData.lat = String(parsed.data.lat);
+    if (parsed.data.lng !== undefined) updateData.lng = String(parsed.data.lng);
+
+    const [venue] = await db.update(schema.venues)
+      .set(updateData)
+      .where(and(eq(schema.venues.id, req.params.id), eq(schema.venues.userId, req.userId!)))
+      .returning();
+
+    res.json({ success: true, data: venue });
+  } catch (err) {
+    console.error('[Venues] Patch error:', err);
+    res.status(500).json({ success: false, error: 'Failed to update venue' });
+  }
+});
+
 // DELETE /api/venues/:id
 router.delete('/:id', requireAuth, requireVenueAccess, async (req: AuthRequest, res: Response) => {
   try {
