@@ -352,7 +352,7 @@ export default function Home() {
 
   return (
     <AppLayout>
-      <div className="flex-1 overflow-y-auto bg-[#FAF9F6]">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-[#FAF9F6]">
         <div className="max-w-[1400px] mx-auto px-6 py-6 space-y-5">
 
           {/* ── Header ──────────────────────────────────────────────── */}

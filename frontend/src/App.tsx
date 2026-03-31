@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
-import { useUser, useClerk } from '@clerk/react';
+import { useUser } from '@clerk/react';
 import { useAuthStore } from '@/store/authStore';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -36,7 +36,6 @@ import { RoomAnalysis } from '@/pages/ComingSoon';
 /** Mirrors Clerk session into the Zustand store so legacy page code keeps working. */
 function useSyncClerkToStore() {
   const { user: clerkUser, isSignedIn, isLoaded } = useUser();
-  const { signOut } = useClerk();
   const syncFromClerk = useAuthStore((s) => s.syncFromClerk);
   const storeLogout   = useAuthStore((s) => s.logout);
 
@@ -54,10 +53,11 @@ function useSyncClerkToStore() {
         },
         true,
       );
-    } else {
-      storeLogout();
-      void signOut();
+      return;
     }
+    // Signed out (or session cleared) — sync local store only. Do not call Clerk signOut() here:
+    // firing it on every mount when already signed out breaks / confuses Clerk and can block the UI.
+    storeLogout();
   }, [isLoaded, isSignedIn, clerkUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 

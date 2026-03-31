@@ -85,7 +85,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           className="w-px cursor-col-resize bg-border hover:bg-primary/40 transition-colors"
         />
       )}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-background">
+      <div className="relative z-0 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background isolate">
         {children}
       </div>
     </div>

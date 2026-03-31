@@ -2897,7 +2897,7 @@ export default function Dashboard() {
   // ─────────────────────────────────────────────────────────────────────────────
   return (
     <AppLayout>
-      <div className="flex flex-col h-full bg-background">
+      <div className="flex min-h-0 h-full flex-col bg-background">
 
         {/* ── Top toolbar ── */}
         <div className="border-b border-border px-6 h-14 flex items-center gap-3">
@@ -2914,7 +2914,7 @@ export default function Dashboard() {
         </div>
 
         {/* ── Main content ── */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto">
 
           {activeMenu === null ? (
             /* ════════════════════════════════════

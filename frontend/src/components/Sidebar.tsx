@@ -182,7 +182,8 @@ export function Sidebar({
       {/* Venue switcher + add restaurant */}
       {!collapsed ? (
         <div className="hidden min-w-0 overflow-hidden lg:block border-b border-border/60 px-2 pb-2 pt-1">
-          <VenueSwitcher stacked triggerClassName="h-9 w-full min-w-0 text-xs" />
+          {/* Remount on route change so Radix Select RemoveScroll cannot stay stuck across navigations */}
+          <VenueSwitcher key={location.pathname} stacked triggerClassName="h-9 w-full min-w-0 text-xs" />
         </div>
       ) : (
         <div className="flex justify-center border-b border-border/60 py-2">

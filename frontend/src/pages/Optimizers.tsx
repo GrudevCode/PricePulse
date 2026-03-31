@@ -53,7 +53,7 @@ export default function Optimizers() {
 
   return (
     <AppLayout>
-      <div className="flex flex-col h-full">
+      <div className="flex min-h-0 h-full flex-col">
 
         {/* Header */}
         <div className="h-14 border-b border-border flex items-center px-6 shrink-0">
@@ -66,7 +66,7 @@ export default function Optimizers() {
         </div>
 
         {/* Tool list */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="divide-y divide-border">
             {OPTIMIZERS.map((opt) => {
               const Icon = opt.icon;
