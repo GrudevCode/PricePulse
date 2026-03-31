@@ -33,13 +33,53 @@ interface DbCategory {
 
 export type MenuPreviewStyle = 'gourmet' | 'fast_food';
 const PLATFORM_ORANGE = '#D25F2A';
+export interface MenuPreviewDesignConfig {
+  bgType?: 'solid' | 'gradient' | 'image';
+  bgColor?: string;
+  bgGradientEnd?: string;
+  bgGradientAngle?: number;
+  bgImageUrl?: string;
+  bgImageOverlay?: number;
+  heroEnabled?: boolean;
+  heroTitle?: string;
+  heroSubtitle?: string;
+  heroBgColor?: string;
+  accentColor?: string;
+  headingColor?: string;
+  bodyColor?: string;
+  priceColor?: string;
+  topBarBgColor?: string;
+  topBarTextColor?: string;
+  cardBgColor?: string;
+  cardBorderColor?: string;
+  ctaBgColor?: string;
+  ctaTextColor?: string;
+  navBgColor?: string;
+  navInactiveTextColor?: string;
+  navActiveBgColor?: string;
+  navActiveTextColor?: string;
+  categoryBgColor?: string;
+  categoryTextColor?: string;
+  fontFamily?: string;
+  cardRadius?: number;
+  layout?: 'list' | 'grid' | 'compact';
+  categoryStyle?: 'pill' | 'underline' | 'banner' | 'minimal';
+  showImages?: boolean;
+  showDescriptions?: boolean;
+}
 
 function isRenderableImage(value?: string | null): boolean {
   const raw = value?.trim() ?? '';
   return /^https?:\/\//i.test(raw) || /^data:image\//i.test(raw);
 }
 
-function PreviewProductItem({ product }: { product: MenuPreviewItemRow }) {
+function PreviewProductItem({
+  product,
+  designConfig,
+}: {
+  product: MenuPreviewItemRow;
+  designConfig?: MenuPreviewDesignConfig | null;
+}) {
   const [imgFailed, setImgFailed] = useState(false);
   const { data: names = [] } = useQuery<string[]>({
     queryKey: ['preview-ingredients', product.id],
@@ -52,35 +92,45 @@ function PreviewProductItem({ product }: { product: MenuPreviewItemRow }) {
   });
 
   const ings = names.join(' · ');
+  const showImage = product.displayImage !== false && isRenderableImage(product.imageUrl) && !imgFailed;
 
   return (
     <div className="px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2.5">
-          {product.displayImage !== false && isRenderableImage(product.imageUrl) && !imgFailed && (
-            <img
-              src={product.imageUrl!.trim()}
-              alt=""
-              loading="lazy"
-              onError={() => setImgFailed(true)}
-              className="h-11 w-11 shrink-0 rounded-md object-cover ring-1 ring-gray-200"
-            />
-          )}
-          <span className="truncate text-[13px] font-semibold leading-snug text-gray-900">{product.name}</span>
-        </div>
-        <span className="shrink-0 whitespace-nowrap tabular-nums text-[13px] font-semibold text-gray-900">
+      <div className="grid grid-cols-[56px_1fr_auto] items-start gap-x-3 gap-y-1">
+        {showImage ? (
+          <img
+            src={product.imageUrl!.trim()}
+            alt=""
+            loading="lazy"
+            onError={() => setImgFailed(true)}
+            className="col-start-1 row-span-3 h-14 w-14 rounded-md object-cover ring-1 ring-gray-200 shadow-sm"
+          />
+        ) : (
+          <div className="col-start-1 row-span-3 h-14 w-14 rounded-md bg-gray-100 ring-1 ring-gray-200" />
+        )}
+
+        <span className="col-start-2 row-start-1 truncate text-[13px] font-semibold leading-snug text-gray-900">
+          {product.name}
+        </span>
+        <span className="col-start-3 row-start-1 whitespace-nowrap text-right tabular-nums text-[13px] font-semibold text-gray-900">
           {formatPence(product.currentPrice)}
         </span>
+        {ings && (
+          <p className="col-start-2 col-span-2 row-start-2 text-[11px] leading-snug text-gray-500 line-clamp-2">
+            {ings}
+          </p>
+        )}
+        {product.description && (
+          <p className="col-start-2 col-span-2 row-start-3 text-[11px] italic leading-snug text-gray-400 line-clamp-1">
+            {product.description}
+          </p>
+        )}
       </div>
-      {ings && <p className="mt-0.5 text-[11px] leading-snug text-gray-500">{ings}</p>}
-      {product.description && (
-        <p className="mt-0.5 text-[11px] italic leading-snug text-gray-400">{product.description}</p>
-      )}
       <div className="mt-2">
         <button
           type="button"
           className="inline-flex h-7 items-center rounded-full px-3 text-[11px] font-semibold text-white"
-          style={{ backgroundColor: PLATFORM_ORANGE }}
+          style={{ backgroundColor: designConfig?.ctaBgColor ?? PLATFORM_ORANGE, color: designConfig?.ctaTextColor ?? '#fff' }}
         >
           Add to cart
         </button>
@@ -93,10 +143,12 @@ function FastFoodMenuCard({
   product,
   categoryName,
   accentColor,
+  designConfig,
 }: {
   product: MenuPreviewItemRow;
   categoryName: string;
   accentColor: string;
+  designConfig?: MenuPreviewDesignConfig | null;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
@@ -178,7 +230,7 @@ function FastFoodMenuCard({
           <button
             type="button"
             className="inline-flex h-7 items-center rounded-full px-3 text-[11px] font-semibold text-white"
-            style={{ backgroundColor: PLATFORM_ORANGE }}
+            style={{ backgroundColor: designConfig?.ctaBgColor ?? PLATFORM_ORANGE, color: designConfig?.ctaTextColor ?? '#fff' }}
           >
             Add to cart
           </button>
@@ -201,6 +253,7 @@ export function MenuPreviewContent({
   menuData,
   menuStyle = 'gourmet',
   accentColor = PLATFORM_ORANGE,
+  designConfig,
 }: {
   menu: MenuPreviewMenuMeta;
   venueId: string;
@@ -210,6 +263,8 @@ export function MenuPreviewContent({
   menuStyle?: MenuPreviewStyle;
   /** Brand hex for fast-food header / tabs (venue brand color). */
   accentColor?: string;
+  /** Optional saved design config from Menu Design Studio */
+  designConfig?: MenuPreviewDesignConfig | null;
 }) {
   const { data: categories = [], isLoading: catsLoading } = useQuery<DbCategory[]>({
     queryKey: ['categories', menu.id],
@@ -274,20 +329,58 @@ export function MenuPreviewContent({
   }
 
   const isFf = menuStyle === 'fast_food';
-  const previewAccent = PLATFORM_ORANGE;
+  const previewAccent = designConfig?.accentColor || PLATFORM_ORANGE;
+  const showImages = designConfig?.showImages !== false;
+  const showDescriptions = designConfig?.showDescriptions !== false;
+  const fontFamily = designConfig?.fontFamily || 'Inter';
+
+  const rootBgStyle: React.CSSProperties =
+    designConfig?.bgType === 'gradient'
+      ? {
+          background: `linear-gradient(${designConfig.bgGradientAngle ?? 135}deg, ${designConfig.bgColor ?? '#faf9f6'}, ${designConfig.bgGradientEnd ?? '#ece8e1'})`,
+          fontFamily,
+        }
+      : designConfig?.bgType === 'image' && designConfig.bgImageUrl
+        ? {
+            backgroundImage: `url(${designConfig.bgImageUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            fontFamily,
+          }
+        : {
+            background: designConfig?.bgColor ?? (isFf ? '#faf9f6' : '#f9fafb'),
+            fontFamily,
+          };
 
   if (isFf) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#faf9f6] [background-image:radial-gradient(circle,#d6d3d1_1px,transparent_1px)] [background-size:14px_14px]">
-        <div className="flex-none border-b border-stone-200 bg-white px-5 pb-2.5 pt-3">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden [background-image:radial-gradient(circle,#d6d3d1_1px,transparent_1px)] [background-size:14px_14px]" style={rootBgStyle}>
+        {designConfig?.bgType === 'image' && designConfig.bgImageUrl && (
+          <div className="absolute inset-0 pointer-events-none" style={{ background: `rgba(0,0,0,${(designConfig.bgImageOverlay ?? 45) / 100})` }} />
+        )}
+        <div className="flex-none border-b border-stone-200 px-5 pb-2.5 pt-3" style={{ background: designConfig?.topBarBgColor ?? '#ffffff' }}>
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-stone-500">{venueName}</p>
-              <p className="mt-1 text-[22px] font-extrabold leading-tight tracking-tight text-stone-900">
-                {menu.name}
-              </p>
-              {menu.description && (
-                <p className="mt-0.5 text-[11px] text-stone-400">{menu.description}</p>
+              {designConfig?.heroEnabled ? (
+                <>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: designConfig.topBarTextColor ?? designConfig.bodyColor ?? '#6b7280' }}>{venueName}</p>
+                  <p className="mt-1 text-[22px] font-extrabold leading-tight tracking-tight" style={{ color: designConfig.topBarTextColor ?? designConfig.headingColor ?? '#111827' }}>
+                    {designConfig.heroTitle || menu.name}
+                  </p>
+                  {(designConfig.heroSubtitle || menu.description) && (
+                    <p className="mt-0.5 text-[11px]" style={{ color: designConfig.bodyColor ?? '#9ca3af' }}>{designConfig.heroSubtitle || menu.description}</p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: designConfig?.topBarTextColor ?? '#78716c' }}>{venueName}</p>
+                  <p className="mt-1 text-[22px] font-extrabold leading-tight tracking-tight" style={{ color: designConfig?.topBarTextColor ?? '#1c1917' }}>
+                    {menu.name}
+                  </p>
+                  {menu.description && (
+                    <p className="mt-0.5 text-[11px] text-stone-400">{menu.description}</p>
+                  )}
+                </>
               )}
             </div>
             <span className="shrink-0 text-2xl" title="English">
@@ -303,12 +396,13 @@ export function MenuPreviewContent({
           </span>
         </div>
 
-        <div className="relative flex-none flex items-stretch border-b border-stone-200 bg-white/95 backdrop-blur-md">
+        <div className="relative flex-none flex items-stretch border-b border-stone-200 backdrop-blur-md" style={{ background: designConfig?.navBgColor ?? '#ffffff' }}>
           {canScrollLeft && (
             <button
               type="button"
               onClick={slideTabsLeft}
-              className="z-10 flex w-7 shrink-0 items-center justify-center border-r border-stone-100 bg-white text-stone-400 hover:text-stone-800"
+              className="z-10 flex w-7 shrink-0 items-center justify-center border-r border-stone-100 hover:text-stone-800"
+              style={{ background: designConfig?.navBgColor ?? '#ffffff', color: designConfig?.navInactiveTextColor ?? '#a8a29e' }}
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path
@@ -336,9 +430,11 @@ export function MenuPreviewContent({
                   onClick={() => setFfFilter('all')}
                   className={cn(
                     'shrink-0 rounded-full px-[18px] py-2.5 text-[13px] font-semibold transition-colors',
-                    ffFilter === 'all' ? 'text-white' : 'bg-transparent text-stone-500',
+                    ffFilter === 'all' ? '' : 'bg-transparent',
                   )}
-                    style={ffFilter === 'all' ? { backgroundColor: previewAccent } : undefined}
+                    style={ffFilter === 'all'
+                      ? { backgroundColor: designConfig?.navActiveBgColor ?? previewAccent, color: designConfig?.navActiveTextColor ?? '#fff' }
+                      : { color: designConfig?.navInactiveTextColor ?? '#78716c' }}
                 >
                   All items
                 </button>
@@ -349,9 +445,11 @@ export function MenuPreviewContent({
                     onClick={() => setFfFilter(cat.id)}
                     className={cn(
                       'shrink-0 rounded-full px-[18px] py-2.5 text-[13px] font-semibold transition-colors',
-                      ffFilter === cat.id ? 'text-white' : 'bg-transparent text-stone-500',
+                      ffFilter === cat.id ? '' : 'bg-transparent',
                     )}
-                    style={ffFilter === cat.id ? { backgroundColor: previewAccent } : undefined}
+                    style={ffFilter === cat.id
+                      ? { backgroundColor: designConfig?.navActiveBgColor ?? previewAccent, color: designConfig?.navActiveTextColor ?? '#fff' }
+                      : { color: designConfig?.navInactiveTextColor ?? '#78716c' }}
                   >
                     {cat.name}
                   </button>
@@ -363,7 +461,8 @@ export function MenuPreviewContent({
             <button
               type="button"
               onClick={slideTabsRight}
-              className="z-10 flex w-7 shrink-0 items-center justify-center border-l border-stone-100 bg-white text-stone-400 hover:text-stone-800"
+              className="z-10 flex w-7 shrink-0 items-center justify-center border-l border-stone-100 hover:text-stone-800"
+              style={{ background: designConfig?.navBgColor ?? '#ffffff', color: designConfig?.navInactiveTextColor ?? '#a8a29e' }}
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                 <path
@@ -379,16 +478,17 @@ export function MenuPreviewContent({
         </div>
 
         <div ref={contentRef} className="min-h-0 flex-1 overflow-y-auto px-3.5 pb-6 pt-3.5">
-          <div className="mx-auto grid max-w-[1100px] grid-cols-2 gap-3.5">
+          <div className={cn('mx-auto grid max-w-[1100px] gap-3.5', designConfig?.layout === 'list' ? 'grid-cols-1' : 'grid-cols-2')}>
             {categories.flatMap((cat) => {
               const catProducts = items.filter((i) => i.categoryId === cat.id);
               if (ffFilter !== 'all' && ffFilter !== cat.id) return [];
               return catProducts.map((product) => (
                 <FastFoodMenuCard
                   key={product.id}
-                  product={product}
+                  product={showImages ? product : { ...product, imageUrl: null, displayImage: false }}
                   categoryName={cat.name}
                   accentColor={previewAccent}
+                  designConfig={designConfig}
                 />
               ));
             })}
@@ -403,13 +503,16 @@ export function MenuPreviewContent({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
-      <div className="flex-none border-b border-gray-200 bg-white px-5 pb-2 pt-3">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden" style={rootBgStyle}>
+      {designConfig?.bgType === 'image' && designConfig.bgImageUrl && (
+        <div className="absolute inset-0 pointer-events-none" style={{ background: `rgba(0,0,0,${(designConfig.bgImageOverlay ?? 30) / 100})` }} />
+      )}
+      <div className="flex-none border-b border-gray-200 px-5 pb-2 pt-3" style={{ background: designConfig?.topBarBgColor ?? '#ffffff' }}>
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-gray-500">{venueName}</p>
-            <p className="text-[18px] font-bold leading-tight tracking-tight text-gray-900">{menu.name}</p>
-            {menu.description && <p className="mt-0.5 text-[11px] text-gray-400">{menu.description}</p>}
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em]" style={{ color: designConfig?.topBarTextColor ?? '#6b7280' }}>{venueName}</p>
+            <p className="text-[18px] font-bold leading-tight tracking-tight" style={{ color: designConfig?.topBarTextColor ?? '#111827' }}>{menu.name}</p>
+            {menu.description && <p className="mt-0.5 text-[11px]" style={{ color: designConfig?.topBarTextColor ?? '#9ca3af' }}>{menu.description}</p>}
           </div>
           <span className="mt-0.5 text-2xl" title="English">
             🇬🇧
@@ -417,12 +520,13 @@ export function MenuPreviewContent({
         </div>
       </div>
 
-      <div className="relative flex flex-none items-stretch border-b border-gray-200 bg-white">
+      <div className="relative flex flex-none items-stretch border-b border-gray-200" style={{ background: designConfig?.navBgColor ?? '#ffffff' }}>
         {canScrollLeft && (
           <button
             type="button"
             onClick={slideTabsLeft}
-            className="z-10 flex w-7 shrink-0 items-center justify-center border-r border-gray-100 bg-white text-gray-400 transition-colors hover:text-gray-900"
+            className="z-10 flex w-7 shrink-0 items-center justify-center border-r border-gray-100 transition-colors hover:text-gray-900"
+            style={{ background: designConfig?.navBgColor ?? '#ffffff', color: designConfig?.navInactiveTextColor ?? '#9ca3af' }}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path
@@ -454,9 +558,12 @@ export function MenuPreviewContent({
                 className={cn(
                   'shrink-0 px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.14em] transition-colors',
                   activeTabId === cat.id
-                    ? 'border-b-2 border-gray-900 text-gray-900'
-                    : 'border-b-2 border-transparent text-gray-400 hover:text-gray-700',
+                    ? 'border-b-2'
+                    : 'border-b-2 border-transparent hover:opacity-80',
                 )}
+                style={activeTabId === cat.id
+                  ? { borderColor: designConfig?.navActiveBgColor ?? '#111827', color: designConfig?.navActiveTextColor ?? '#111827', background: designConfig?.navBgColor ?? '#fff' }
+                  : { color: designConfig?.navInactiveTextColor ?? '#9ca3af', background: designConfig?.navBgColor ?? '#fff' }}
               >
                 {cat.name}
               </button>
@@ -468,7 +575,8 @@ export function MenuPreviewContent({
           <button
             type="button"
             onClick={slideTabsRight}
-            className="z-10 flex w-7 shrink-0 items-center justify-center border-l border-gray-100 bg-white text-gray-400 transition-colors hover:text-gray-900"
+            className="z-10 flex w-7 shrink-0 items-center justify-center border-l border-gray-100 transition-colors hover:text-gray-900"
+            style={{ background: designConfig?.navBgColor ?? '#ffffff', color: designConfig?.navInactiveTextColor ?? '#9ca3af' }}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path
@@ -483,18 +591,36 @@ export function MenuPreviewContent({
         )}
       </div>
 
-      <div ref={contentRef} className="min-h-0 flex-1 overflow-y-auto bg-gray-50" onScroll={handleScroll}>
+      <div ref={contentRef} className="min-h-0 flex-1 overflow-y-auto" onScroll={handleScroll}>
         {categories.map((cat) => {
           const catProducts = items.filter((i) => i.categoryId === cat.id);
           if (catProducts.length === 0) return null;
           return (
             <div key={cat.id} data-cat={cat.id}>
-              <div className="bg-gray-900 py-2 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-white">
-                {cat.name}
-              </div>
-              <div className="mx-3 my-3 divide-y divide-gray-100 overflow-hidden rounded border border-gray-200 bg-white shadow-sm">
+              {designConfig?.categoryStyle === 'pill' && (
+                <div className="mx-3 mt-3">
+                  <span className="inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]" style={{ background: designConfig.categoryBgColor ?? '#111827', color: designConfig.categoryTextColor ?? '#fff' }}>
+                    {cat.name}
+                  </span>
+                </div>
+              )}
+              {designConfig?.categoryStyle === 'underline' && (
+                <div className="mx-3 mt-3 pb-1 border-b" style={{ borderColor: designConfig.accentColor ?? previewAccent }}>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: designConfig.categoryTextColor ?? '#111827' }}>{cat.name}</span>
+                </div>
+              )}
+              {(!designConfig?.categoryStyle || designConfig.categoryStyle === 'banner' || designConfig.categoryStyle === 'minimal') && (
+                <div className="py-2 text-center text-[10px] font-bold uppercase tracking-[0.22em]" style={{ background: designConfig?.categoryBgColor ?? '#111827', color: designConfig?.categoryTextColor ?? '#fff' }}>
+                  {cat.name}
+                </div>
+              )}
+              <div className={cn('mx-3 my-3 overflow-hidden rounded border shadow-sm', designConfig?.layout === 'grid' ? 'grid grid-cols-2 divide-x divide-y' : 'divide-y')} style={{ borderColor: designConfig?.cardBorderColor ?? '#e5e7eb', background: designConfig?.cardBgColor ?? '#fff', borderRadius: designConfig?.cardRadius ?? 8 }}>
                 {catProducts.map((product) => (
-                  <PreviewProductItem key={product.id} product={product} />
+                  <PreviewProductItem
+                    key={product.id}
+                    product={showImages ? product : { ...product, imageUrl: null, displayImage: false, description: showDescriptions ? product.description : null }}
+                    designConfig={designConfig}
+                  />
                 ))}
               </div>
             </div>

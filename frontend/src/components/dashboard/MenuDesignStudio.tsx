@@ -5,10 +5,22 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { menusApi } from '@/lib/api';
 import {
+  MenuPreviewContent,
+  MenuPreviewPhoneShell,
+  type MenuPreviewStyle,
+  type MenuPreviewItemRow,
+} from '@/components/menu/MenuPreviewContent';
+import {
   X, Save, RotateCcw, Palette, Type, Layout, Square,
-  Image, ChevronRight, Check, Sparkles, Eye, Star,
-  Layers, Sliders, SunMedium,
+  Check, Sparkles, Eye, Star, Layers, Sliders, SunMedium,
 } from 'lucide-react';
+
+// Brand orange (matches --primary: 20 68% 49% → #D25F2A)
+const BRAND = '#D25F2A';
+const BRAND_LIGHT = '#e8783e';
+const BRAND_DARK = '#b54e21';
+const BRAND_BG = 'rgba(210,95,42,0.15)';
+const BRAND_BORDER = 'rgba(210,95,42,0.45)';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,8 +40,16 @@ export interface MenuDesignConfig {
   headingColor: string;
   bodyColor: string;
   priceColor: string;
+  topBarBgColor: string;
+  topBarTextColor: string;
   cardBgColor: string;
   cardBorderColor: string;
+  ctaBgColor: string;
+  ctaTextColor: string;
+  navBgColor: string;
+  navInactiveTextColor: string;
+  navActiveBgColor: string;
+  navActiveTextColor: string;
   categoryBgColor: string;
   categoryTextColor: string;
   fontFamily: string;
@@ -44,21 +64,29 @@ export interface MenuDesignConfig {
 export const DEFAULT_DESIGN_CONFIG: MenuDesignConfig = {
   bgType: 'solid',
   bgColor: '#0f0f0f',
-  bgGradientEnd: '#1a1a2e',
+  bgGradientEnd: '#1a0a00',
   bgGradientAngle: 135,
   bgImageUrl: '',
   bgImageOverlay: 40,
   heroEnabled: false,
-  heroBgColor: '#1a1a2e',
+  heroBgColor: '#1a0a00',
   heroTitle: '',
   heroSubtitle: '',
   heroImageUrl: '',
-  accentColor: '#6366f1',
+  accentColor: BRAND,
   headingColor: '#ffffff',
   bodyColor: '#a1a1aa',
-  priceColor: '#6366f1',
+  priceColor: BRAND,
+  topBarBgColor: '#ffffff',
+  topBarTextColor: '#111827',
   cardBgColor: '#1c1c1e',
   cardBorderColor: '#2a2a2a',
+  ctaBgColor: BRAND,
+  ctaTextColor: '#ffffff',
+  navBgColor: '#ffffff',
+  navInactiveTextColor: '#78716c',
+  navActiveBgColor: BRAND,
+  navActiveTextColor: '#ffffff',
   categoryBgColor: '#18181b',
   categoryTextColor: '#ffffff',
   fontFamily: 'Inter',
@@ -77,15 +105,28 @@ interface Preset {
   emoji: string;
   description: string;
   config: Partial<MenuDesignConfig>;
-  preview: { bg: string; accent: string; card: string; text: string };
+  preview: { bg: string; accent: string; card: string };
 }
 
 const PRESETS: Preset[] = [
   {
-    name: 'Dark Luxe',
+    name: 'Ember Dark',
     emoji: '✦',
-    description: 'Elegant dark tones with gold',
-    preview: { bg: '#0d0d0d', accent: '#c9a84c', card: '#1a1a1a', text: '#ffffff' },
+    description: 'Deep black with brand orange',
+    preview: { bg: '#0d0d0d', accent: BRAND, card: '#1a1a1a' },
+    config: {
+      bgType: 'solid', bgColor: '#0d0d0d', accentColor: BRAND,
+      headingColor: '#ffffff', bodyColor: '#888888', priceColor: BRAND_LIGHT,
+      cardBgColor: '#1a1a1a', cardBorderColor: '#2a2a2a', categoryBgColor: '#111111',
+      categoryTextColor: BRAND_LIGHT, cardStyle: 'shadow', cardRadius: 14,
+      layout: 'list', categoryStyle: 'pill', fontFamily: 'Inter',
+    },
+  },
+  {
+    name: 'Dark Luxe',
+    emoji: '◈',
+    description: 'Dark tones with gold accents',
+    preview: { bg: '#0d0d0d', accent: '#c9a84c', card: '#1a1a1a' },
     config: {
       bgType: 'solid', bgColor: '#0d0d0d', accentColor: '#c9a84c',
       headingColor: '#ffffff', bodyColor: '#888888', priceColor: '#c9a84c',
@@ -95,10 +136,10 @@ const PRESETS: Preset[] = [
     },
   },
   {
-    name: 'Midnight Gradient',
-    emoji: '◈',
-    description: 'Deep blue gradient, purple glow',
-    preview: { bg: '#0f0c29', accent: '#818cf8', card: '#1e1b4b', text: '#e0e7ff' },
+    name: 'Midnight',
+    emoji: '◉',
+    description: 'Deep blue gradient, clean',
+    preview: { bg: '#0f0c29', accent: '#818cf8', card: '#1e1b4b' },
     config: {
       bgType: 'gradient', bgColor: '#0f0c29', bgGradientEnd: '#302b63', bgGradientAngle: 135,
       accentColor: '#818cf8', headingColor: '#e0e7ff', bodyColor: '#94a3b8',
@@ -111,7 +152,7 @@ const PRESETS: Preset[] = [
     name: 'Fresh & Clean',
     emoji: '○',
     description: 'Bright minimal with emerald',
-    preview: { bg: '#ffffff', accent: '#10b981', card: '#f9fafb', text: '#111827' },
+    preview: { bg: '#ffffff', accent: '#10b981', card: '#f9fafb' },
     config: {
       bgType: 'solid', bgColor: '#ffffff', accentColor: '#10b981',
       headingColor: '#111827', bodyColor: '#6b7280', priceColor: '#10b981',
@@ -122,9 +163,9 @@ const PRESETS: Preset[] = [
   },
   {
     name: 'Warm Bistro',
-    emoji: '◉',
+    emoji: '◆',
     description: 'Earthy tones, cozy atmosphere',
-    preview: { bg: '#1c1007', accent: '#f59e0b', card: '#2a1f0e', text: '#fef3c7' },
+    preview: { bg: '#1c1007', accent: '#f59e0b', card: '#2a1f0e' },
     config: {
       bgType: 'gradient', bgColor: '#1c1007', bgGradientEnd: '#2d1b00', bgGradientAngle: 160,
       accentColor: '#f59e0b', headingColor: '#fef3c7', bodyColor: '#d97706',
@@ -135,28 +176,15 @@ const PRESETS: Preset[] = [
   },
   {
     name: 'Bold Urban',
-    emoji: '◆',
+    emoji: '◇',
     description: 'High contrast, vivid energy',
-    preview: { bg: '#09090b', accent: '#f97316', card: '#18181b', text: '#ffffff' },
+    preview: { bg: '#09090b', accent: '#f97316', card: '#18181b' },
     config: {
       bgType: 'solid', bgColor: '#09090b', accentColor: '#f97316',
       headingColor: '#ffffff', bodyColor: '#71717a', priceColor: '#fb923c',
       cardBgColor: '#18181b', cardBorderColor: '#27272a', categoryBgColor: '#18181b',
       categoryTextColor: '#f97316', cardStyle: 'border', cardRadius: 6,
       layout: 'compact', categoryStyle: 'underline', fontFamily: 'Space Grotesk',
-    },
-  },
-  {
-    name: 'Rose Petal',
-    emoji: '◇',
-    description: 'Romantic blush with rose gold',
-    preview: { bg: '#fff1f2', accent: '#f43f5e', card: '#ffffff', text: '#881337' },
-    config: {
-      bgType: 'solid', bgColor: '#fff1f2', accentColor: '#f43f5e',
-      headingColor: '#881337', bodyColor: '#9f1239', priceColor: '#e11d48',
-      cardBgColor: '#ffffff', cardBorderColor: '#fecdd3', categoryBgColor: '#fff1f2',
-      categoryTextColor: '#881337', cardStyle: 'shadow', cardRadius: 20,
-      layout: 'grid', categoryStyle: 'pill', fontFamily: 'Inter',
     },
   },
 ];
@@ -169,7 +197,7 @@ const FONT_OPTIONS = [
 // ─── Mock menu data for preview ───────────────────────────────────────────────
 
 const PREVIEW_ITEMS = [
-  { name: 'Wagyu Beef Tenderloin', description: 'With truffle jus & seasonal greens', price: '£42', category: 'Mains' },
+  { name: 'Wagyu Beef Tenderloin', description: 'Truffle jus & seasonal greens', price: '£42', category: 'Mains' },
   { name: 'Burrata & Heritage Tomato', description: 'Aged balsamic, micro herbs', price: '£14', category: 'Starters' },
   { name: 'Wild Mushroom Risotto', description: 'Parmesan foam, crispy sage', price: '£19', category: 'Mains' },
   { name: 'Dark Chocolate Fondant', description: 'Salted caramel, vanilla ice cream', price: '£9', category: 'Desserts' },
@@ -177,9 +205,7 @@ const PREVIEW_ITEMS = [
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function ColorSwatch({
-  value, onChange, label,
-}: { value: string; onChange: (v: string) => void; label: string }) {
+function ColorSwatch({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
   return (
     <div className="flex items-center justify-between">
@@ -209,6 +235,7 @@ function SliderRow({
   label: string; value: number; min: number; max: number;
   step?: number; unit?: string; onChange: (v: number) => void;
 }) {
+  const pct = ((value - min) / (max - min)) * 100;
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between items-center">
@@ -218,8 +245,8 @@ function SliderRow({
       <input
         type="range" min={min} max={max} step={step} value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-indigo-500"
-        style={{ background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((value - min) / (max - min)) * 100}%, #27272a ${((value - min) / (max - min)) * 100}%, #27272a 100%)` }}
+        className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+        style={{ background: `linear-gradient(to right, ${BRAND} 0%, ${BRAND} ${pct}%, #27272a ${pct}%, #27272a 100%)` }}
       />
     </div>
   );
@@ -228,9 +255,25 @@ function SliderRow({
 function SectionTitle({ icon: Icon, children }: { icon: ElementType; children: string }) {
   return (
     <div className="flex items-center gap-2 mb-3">
-      <Icon className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+      <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: BRAND }} />
       <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">{children}</span>
     </div>
+  );
+}
+
+function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!value)}
+      className="w-9 h-5 rounded-full transition-all relative shrink-0"
+      style={{ background: value ? BRAND : '#3f3f46' }}
+    >
+      <span
+        className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all"
+        style={{ left: value ? '17px' : '2px' }}
+      />
+    </button>
   );
 }
 
@@ -248,12 +291,10 @@ function OptionGrid<T extends string>({
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
-          className={cn(
-            'py-1.5 px-2 rounded-lg text-[11px] font-medium transition-all border',
-            value === opt.value
-              ? 'bg-indigo-600/30 border-indigo-500/60 text-indigo-300'
-              : 'bg-white/5 border-white/5 text-zinc-400 hover:bg-white/10 hover:border-white/15',
-          )}
+          className="py-1.5 px-2 rounded-lg text-[11px] font-medium transition-all border"
+          style={value === opt.value
+            ? { background: BRAND_BG, borderColor: BRAND_BORDER, color: BRAND_LIGHT }
+            : { background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.06)', color: '#71717a' }}
         >
           {opt.label}
         </button>
@@ -278,127 +319,151 @@ function PhonePreview({ config, menuName }: { config: MenuDesignConfig; menuName
     { cat: 'Desserts', items: PREVIEW_ITEMS.filter(i => i.category === 'Desserts') },
   ].filter(g => g.items.length > 0);
 
-  const fontStyle = { fontFamily: config.fontFamily };
+  const cardStyles: React.CSSProperties = {
+    borderRadius: config.layout === 'compact' ? 0 : config.cardRadius / 2,
+    border: config.cardStyle === 'border' ? `1px solid ${config.cardBorderColor}` : 'none',
+    boxShadow: config.cardStyle === 'shadow' ? '0 2px 8px rgba(0,0,0,0.35)' : 'none',
+    backdropFilter: config.cardStyle === 'glass' ? 'blur(10px)' : 'none',
+    background: config.cardStyle === 'glass'
+      ? `${config.cardBgColor}bb`
+      : config.cardStyle === 'flat' ? 'transparent'
+      : config.cardBgColor,
+  };
 
   return (
-    <div className="relative mx-auto" style={{ width: 260 }}>
-      {/* Phone shell */}
-      <div className="absolute inset-0 rounded-[36px] bg-gradient-to-b from-zinc-700 to-zinc-800 shadow-2xl pointer-events-none z-10" style={{ boxShadow: '0 0 0 2px #3f3f46, 0 40px 80px rgba(0,0,0,0.7)' }} />
-
-      {/* Notch */}
-      <div className="absolute top-3.5 left-1/2 -translate-x-1/2 w-20 h-5 bg-zinc-900 rounded-full z-20 pointer-events-none" />
-
-      {/* Screen content */}
+    <div className="relative select-none" style={{ width: 260 }}>
+      {/* Phone outer body */}
       <div
-        className="relative rounded-[32px] overflow-hidden z-0"
-        style={{ ...bgStyle, ...fontStyle, minHeight: 520, margin: '4px' }}
+        className="rounded-[38px] relative"
+        style={{
+          background: 'linear-gradient(145deg, #5a5a5a, #2a2a2a)',
+          padding: '10px 5px 16px 5px',
+          boxShadow: '0 0 0 1px #555, inset 0 1px 0 rgba(255,255,255,0.1), 0 50px 100px rgba(0,0,0,0.9)',
+        }}
       >
-        {/* Image overlay */}
-        {config.bgType === 'image' && config.bgImageUrl && (
-          <div className="absolute inset-0 pointer-events-none" style={{ background: `rgba(0,0,0,${config.bgImageOverlay / 100})` }} />
-        )}
-
-        {/* Hero */}
-        {config.heroEnabled && (
-          <div
-            className="relative px-4 pt-12 pb-6 text-center"
-            style={{ background: config.heroBgColor }}
-          >
-            {config.heroImageUrl && (
-              <div className="w-full h-24 mb-3 rounded-xl overflow-hidden">
-                <img src={config.heroImageUrl} alt="" className="w-full h-full object-cover" />
-              </div>
-            )}
-            <h1 className="font-bold text-lg leading-tight" style={{ color: config.headingColor }}>
-              {config.heroTitle || menuName}
-            </h1>
-            {config.heroSubtitle && (
-              <p className="text-xs mt-1" style={{ color: config.bodyColor }}>{config.heroSubtitle}</p>
-            )}
-          </div>
-        )}
-
-        {/* Menu name header when no hero */}
-        {!config.heroEnabled && (
-          <div className="px-4 pt-10 pb-3">
-            <h1 className="font-bold text-base" style={{ color: config.headingColor }}>{menuName}</h1>
-          </div>
-        )}
-
-        {/* Content */}
-        <div className="px-3 pb-4 relative z-10 space-y-3">
-          {catGroups.map(({ cat, items }) => (
-            <div key={cat}>
-              {/* Category header */}
-              {config.categoryStyle === 'pill' && (
-                <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider mb-2"
-                  style={{ background: config.categoryBgColor, color: config.categoryTextColor }}>
-                  {cat}
-                </div>
-              )}
-              {config.categoryStyle === 'underline' && (
-                <div className="mb-2 border-b pb-1" style={{ borderColor: config.accentColor }}>
-                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: config.categoryTextColor }}>{cat}</span>
-                </div>
-              )}
-              {config.categoryStyle === 'banner' && (
-                <div className="w-full py-1 px-2 mb-2 rounded-md text-center"
-                  style={{ background: config.categoryBgColor }}>
-                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: config.categoryTextColor }}>{cat}</span>
-                </div>
-              )}
-              {config.categoryStyle === 'minimal' && (
-                <div className="mb-2">
-                  <span className="text-[10px] font-semibold" style={{ color: config.bodyColor }}>{cat}</span>
-                </div>
-              )}
-
-              {/* Items */}
-              <div className={cn(
-                'gap-1.5',
-                config.layout === 'grid' ? 'grid grid-cols-2' : 'flex flex-col',
-              )}>
-                {items.map((item) => (
-                  <div
-                    key={item.name}
-                    className={cn(
-                      'transition-all overflow-hidden',
-                      config.layout === 'compact' ? 'flex items-center justify-between py-1.5 px-2' : 'p-2 rounded-lg',
-                    )}
-                    style={{
-                      background: config.layout === 'compact' ? 'transparent' : config.cardBgColor,
-                      borderRadius: config.layout === 'compact' ? 0 : config.cardRadius / 2,
-                      border: config.cardStyle === 'border' ? `1px solid ${config.cardBorderColor}` : 'none',
-                      boxShadow: config.cardStyle === 'shadow' ? '0 2px 8px rgba(0,0,0,0.3)' : 'none',
-                      backdropFilter: config.cardStyle === 'glass' ? 'blur(10px)' : 'none',
-                    }}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-semibold leading-tight truncate" style={{ color: config.headingColor }}>
-                        {item.name}
-                      </p>
-                      {config.showDescriptions && item.description && config.layout !== 'compact' && (
-                        <p className="text-[8px] mt-0.5 leading-tight line-clamp-2" style={{ color: config.bodyColor }}>
-                          {item.description}
-                        </p>
-                      )}
-                    </div>
-                    <p className="text-[10px] font-bold shrink-0 ml-2" style={{ color: config.priceColor }}>
-                      {item.price}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+        {/* Notch */}
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 z-10"
+          style={{ width: 90, height: 22, background: '#1a1a1a', borderRadius: '0 0 18px 18px' }}
+        >
+          <div className="absolute top-1.5 left-1/2 -translate-x-1/2 rounded-full" style={{ width: 36, height: 10, background: '#111' }} />
         </div>
 
-        {/* Bottom nav stub */}
-        <div className="sticky bottom-0 left-0 right-0 py-2 px-4 flex justify-center gap-4 border-t"
-          style={{ background: config.bgColor, borderColor: config.cardBorderColor }}>
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: config.accentColor }} />
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: config.bodyColor }} />
-          <div className="w-1.5 h-1.5 rounded-full" style={{ background: config.bodyColor }} />
+        {/* Side buttons */}
+        <div className="absolute rounded-l-sm" style={{ right: -3, top: 88, width: 3, height: 52, background: '#444' }} />
+        <div className="absolute rounded-r-sm" style={{ left: -3, top: 72, width: 3, height: 36, background: '#444' }} />
+        <div className="absolute rounded-r-sm" style={{ left: -3, top: 116, width: 3, height: 36, background: '#444' }} />
+
+        {/* Screen */}
+        <div
+          className="rounded-[30px] overflow-hidden"
+          style={{ ...bgStyle, fontFamily: config.fontFamily, minHeight: 500, position: 'relative' }}
+        >
+          {/* Image overlay */}
+          {config.bgType === 'image' && config.bgImageUrl && (
+            <div className="absolute inset-0 pointer-events-none" style={{ background: `rgba(0,0,0,${config.bgImageOverlay / 100})`, zIndex: 0 }} />
+          )}
+
+          {/* Spacer for notch */}
+          <div style={{ height: 28 }} />
+
+          {/* Hero */}
+          {config.heroEnabled && (
+            <div className="px-4 pb-4 text-center relative z-10" style={{ background: config.heroBgColor }}>
+              {config.heroImageUrl && (
+                <div className="w-full h-20 mb-2 rounded-xl overflow-hidden">
+                  <img src={config.heroImageUrl} alt="" className="w-full h-full object-cover" />
+                </div>
+              )}
+              <h1 className="font-bold text-base leading-tight" style={{ color: config.headingColor }}>
+                {config.heroTitle || menuName}
+              </h1>
+              {config.heroSubtitle && (
+                <p className="text-[10px] mt-0.5" style={{ color: config.bodyColor }}>{config.heroSubtitle}</p>
+              )}
+            </div>
+          )}
+
+          {/* Menu name when no hero */}
+          {!config.heroEnabled && (
+            <div className="px-4 pt-2 pb-2 relative z-10">
+              <h1 className="font-bold text-sm" style={{ color: config.headingColor }}>{menuName}</h1>
+              <div className="mt-0.5 h-px w-8 rounded-full" style={{ background: config.accentColor }} />
+            </div>
+          )}
+
+          {/* Items */}
+          <div className="px-3 pb-4 relative z-10 space-y-3">
+            {catGroups.map(({ cat, items }) => (
+              <div key={cat}>
+                {/* Category label */}
+                {config.categoryStyle === 'pill' && (
+                  <div className="inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider mb-1.5"
+                    style={{ background: config.categoryBgColor, color: config.categoryTextColor }}>
+                    {cat}
+                  </div>
+                )}
+                {config.categoryStyle === 'underline' && (
+                  <div className="mb-1.5 pb-1 border-b" style={{ borderColor: config.accentColor }}>
+                    <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: config.categoryTextColor }}>{cat}</span>
+                  </div>
+                )}
+                {config.categoryStyle === 'banner' && (
+                  <div className="w-full py-1 px-2 mb-1.5 text-center rounded-md"
+                    style={{ background: config.categoryBgColor }}>
+                    <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: config.categoryTextColor }}>{cat}</span>
+                  </div>
+                )}
+                {config.categoryStyle === 'minimal' && (
+                  <div className="mb-1.5">
+                    <span className="text-[9px] font-semibold" style={{ color: config.bodyColor }}>{cat}</span>
+                  </div>
+                )}
+
+                {/* Item cards */}
+                <div className={cn(
+                  config.layout === 'grid' ? 'grid grid-cols-2 gap-1.5' : 'flex flex-col gap-1',
+                )}>
+                  {items.map((item) => (
+                    <div
+                      key={item.name}
+                      className={cn(
+                        'overflow-hidden',
+                        config.layout === 'compact'
+                          ? 'flex items-center justify-between py-1 px-2 border-b'
+                          : 'p-2',
+                      )}
+                      style={config.layout === 'compact'
+                        ? { borderColor: config.cardBorderColor }
+                        : cardStyles}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[9px] font-semibold leading-tight truncate" style={{ color: config.headingColor }}>
+                          {item.name}
+                        </p>
+                        {config.showDescriptions && config.layout !== 'compact' && (
+                          <p className="text-[8px] mt-0.5 leading-tight line-clamp-2" style={{ color: config.bodyColor }}>
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-[9px] font-bold shrink-0 ml-1.5" style={{ color: config.priceColor }}>
+                        {item.price}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom bar stub */}
+          <div className="sticky bottom-0 py-2 flex justify-center gap-3 border-t"
+            style={{ background: config.bgColor, borderColor: config.cardBorderColor }}>
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: config.accentColor }} />
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: config.bodyColor }} />
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: config.bodyColor }} />
+          </div>
         </div>
       </div>
     </div>
@@ -412,7 +477,7 @@ type Tab = 'background' | 'colors' | 'typography' | 'layout';
 const TABS: { id: Tab; icon: ElementType; label: string }[] = [
   { id: 'background', icon: SunMedium, label: 'Background' },
   { id: 'colors',     icon: Palette,  label: 'Colors' },
-  { id: 'typography', icon: Type,     label: 'Typography' },
+  { id: 'typography', icon: Type,     label: 'Type' },
   { id: 'layout',     icon: Layout,   label: 'Layout' },
 ];
 
@@ -420,13 +485,19 @@ const TABS: { id: Tab; icon: ElementType; label: string }[] = [
 
 interface MenuDesignStudioProps {
   venueId: string;
+  venueName: string;
+  menuStyle: MenuPreviewStyle;
+  menuData: MenuPreviewItemRow[];
   menu: { id: string; name: string; designConfig?: MenuDesignConfig | null };
   onClose: () => void;
 }
 
-export function MenuDesignStudio({ venueId, menu, onClose }: MenuDesignStudioProps) {
+export function MenuDesignStudio({ venueId, venueName, menuStyle, menuData, menu, onClose }: MenuDesignStudioProps) {
   const queryClient = useQueryClient();
-  const savedConfig = menu.designConfig ?? DEFAULT_DESIGN_CONFIG;
+  const savedConfig = {
+    ...DEFAULT_DESIGN_CONFIG,
+    ...((menu.designConfig as Partial<MenuDesignConfig> | null) ?? {}),
+  };
   const [config, setConfig] = useState<MenuDesignConfig>({ ...savedConfig });
   const [tab, setTab] = useState<Tab>('background');
   const [previewMode, setPreviewMode] = useState(false);
@@ -437,16 +508,6 @@ export function MenuDesignStudio({ venueId, menu, onClose }: MenuDesignStudioPro
 
   const applyPreset = useCallback((preset: Preset) => {
     setConfig((prev) => ({ ...prev, ...preset.config }));
-  }, []);
-
-  const handleRevert = useCallback(() => {
-    setConfig({ ...savedConfig });
-    toast.info('Design reverted to saved state');
-  }, [savedConfig]);
-
-  const resetToDefault = useCallback(() => {
-    setConfig({ ...DEFAULT_DESIGN_CONFIG });
-    toast.info('Reset to default design');
   }, []);
 
   const saveMutation = useMutation({
@@ -460,44 +521,48 @@ export function MenuDesignStudio({ venueId, menu, onClose }: MenuDesignStudioPro
 
   const isDirty = JSON.stringify(config) !== JSON.stringify(savedConfig);
 
+  const topBarBtnBase = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all border';
+
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex flex-col" style={{ background: '#0a0a0a' }}>
+
       {/* ── Top bar ─────────────────────────────────────────────────────────── */}
       <div className="h-14 flex items-center px-4 gap-3 border-b shrink-0"
         style={{ borderColor: '#1e1e1e', background: '#0f0f0f' }}>
+
+        {/* Logo + menu name */}
         <div className="flex items-center gap-2.5 mr-2">
-          <div className="w-7 h-7 rounded-lg bg-indigo-600/20 flex items-center justify-center">
-            <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: BRAND_BG }}>
+            <Sparkles className="h-3.5 w-3.5" style={{ color: BRAND }} />
           </div>
           <div>
-            <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest leading-none">Design Studio</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest leading-none" style={{ color: BRAND }}>Design Studio</p>
             <p className="text-sm font-semibold text-white leading-tight mt-0.5">{menu.name}</p>
           </div>
         </div>
 
         <div className="flex-1" />
 
-        {/* Preview toggle */}
+        {/* Preview */}
         <button
           type="button"
           onClick={() => setPreviewMode(v => !v)}
-          className={cn(
-            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all border',
-            previewMode
-              ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-300'
-              : 'bg-white/5 border-white/8 text-zinc-400 hover:text-zinc-200 hover:bg-white/8',
-          )}
+          className={topBarBtnBase}
+          style={previewMode
+            ? { background: BRAND_BG, borderColor: BRAND_BORDER, color: BRAND_LIGHT }
+            : { background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.07)', color: '#71717a' }}
         >
           <Eye className="h-3.5 w-3.5" />
-          Preview
+          {previewMode ? 'Editing' : 'Preview'}
         </button>
 
         {/* Revert */}
         <button
           type="button"
-          onClick={handleRevert}
+          onClick={() => { setConfig({ ...savedConfig }); toast.info('Reverted to saved design'); }}
           disabled={!isDirty}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all border border-white/8 bg-white/5 text-zinc-400 hover:text-zinc-200 hover:bg-white/8 disabled:opacity-30 disabled:cursor-not-allowed"
+          className={topBarBtnBase}
+          style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.07)', color: '#71717a', opacity: isDirty ? 1 : 0.3, cursor: isDirty ? 'pointer' : 'not-allowed' }}
         >
           <RotateCcw className="h-3.5 w-3.5" />
           Revert
@@ -506,10 +571,11 @@ export function MenuDesignStudio({ venueId, menu, onClose }: MenuDesignStudioPro
         {/* Reset */}
         <button
           type="button"
-          onClick={resetToDefault}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all border border-white/8 bg-white/5 text-zinc-400 hover:text-zinc-200 hover:bg-white/8"
+          onClick={() => { setConfig({ ...DEFAULT_DESIGN_CONFIG }); toast.info('Reset to default'); }}
+          className={topBarBtnBase}
+          style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.07)', color: '#71717a' }}
         >
-          Reset default
+          Reset
         </button>
 
         {/* Save */}
@@ -517,16 +583,12 @@ export function MenuDesignStudio({ venueId, menu, onClose }: MenuDesignStudioPro
           type="button"
           onClick={() => saveMutation.mutate()}
           disabled={saveMutation.isPending || !isDirty}
-          className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-semibold transition-all bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-900/40"
+          className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-semibold transition-all text-white shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ background: isDirty && !saveMutation.isPending ? BRAND : BRAND_DARK, boxShadow: `0 4px 18px rgba(210,95,42,0.3)` }}
         >
-          {saveMutation.isPending ? (
-            <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-          ) : (
-            <Save className="h-3.5 w-3.5" />
-          )}
+          {saveMutation.isPending
+            ? <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>
+            : <Save className="h-3.5 w-3.5" />}
           Save design
         </button>
 
@@ -534,31 +596,33 @@ export function MenuDesignStudio({ venueId, menu, onClose }: MenuDesignStudioPro
         <button
           type="button"
           onClick={onClose}
-          className="ml-1 w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-zinc-200 hover:bg-white/8 transition-all border border-white/5"
+          className="ml-1 w-8 h-8 rounded-lg flex items-center justify-center transition-all border"
+          style={{ borderColor: 'rgba(255,255,255,0.07)', color: '#71717a' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#fff'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#71717a'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
         >
           <X className="h-4 w-4" />
         </button>
       </div>
 
-      {/* ── Body ───────────────────────────────────────────────────────────── */}
+      {/* ── Body ─────────────────────────────────────────────────────────────── */}
       <div className="flex flex-1 min-h-0">
 
-        {/* ── Left panel (tool tabs) ──────────────────────────────────────── */}
+        {/* ── Left panel ───────────────────────────────────────────────────── */}
         {!previewMode && (
           <div className="w-72 shrink-0 flex flex-col border-r" style={{ borderColor: '#1e1e1e', background: '#0c0c0c' }}>
-            {/* Tab buttons */}
+
+            {/* Tabs */}
             <div className="flex border-b shrink-0" style={{ borderColor: '#1e1e1e' }}>
               {TABS.map(({ id, icon: Icon, label }) => (
                 <button
                   key={id}
                   type="button"
                   onClick={() => setTab(id)}
-                  className={cn(
-                    'flex-1 flex flex-col items-center gap-1 py-3 text-[9px] font-bold uppercase tracking-wider transition-all border-b-2',
-                    tab === id
-                      ? 'text-indigo-400 border-indigo-500 bg-indigo-600/5'
-                      : 'text-zinc-600 border-transparent hover:text-zinc-400',
-                  )}
+                  className="flex-1 flex flex-col items-center gap-1 py-3 text-[9px] font-bold uppercase tracking-wider transition-all border-b-2"
+                  style={tab === id
+                    ? { color: BRAND, borderBottomColor: BRAND, background: BRAND_BG }
+                    : { color: '#52525b', borderBottomColor: 'transparent' }}
                 >
                   <Icon className="h-4 w-4" />
                   {label}
@@ -569,16 +633,16 @@ export function MenuDesignStudio({ venueId, menu, onClose }: MenuDesignStudioPro
             {/* Tab content */}
             <div className="flex-1 overflow-y-auto p-4 space-y-5">
 
-              {/* ── Background tab ───────────────────────────────────────── */}
+              {/* ── BACKGROUND ───────────────────────────────────────────── */}
               {tab === 'background' && (
                 <>
                   <div>
                     <SectionTitle icon={Square}>Background type</SectionTitle>
                     <OptionGrid
                       options={[
-                        { value: 'solid', label: 'Solid' },
-                        { value: 'gradient', label: 'Gradient' },
-                        { value: 'image', label: 'Image URL' },
+                        { value: 'solid' as const, label: 'Solid' },
+                        { value: 'gradient' as const, label: 'Gradient' },
+                        { value: 'image' as const, label: 'Image URL' },
                       ]}
                       value={config.bgType}
                       onChange={(v) => update('bgType', v)}
@@ -596,18 +660,17 @@ export function MenuDesignStudio({ venueId, menu, onClose }: MenuDesignStudioPro
                       </div>
                     )}
                     {config.bgType === 'image' && (
-                      <div className="mt-3">
+                      <div className="mt-3 space-y-3">
                         <input
                           type="text"
                           placeholder="https://example.com/bg.jpg"
                           value={config.bgImageUrl}
                           onChange={(e) => update('bgImageUrl', e.target.value)}
-                          className="w-full h-8 rounded-lg bg-white/5 border border-white/10 text-[11px] text-zinc-200 px-2.5 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20"
+                          className="w-full h-8 rounded-lg text-[11px] text-zinc-200 px-2.5 placeholder:text-zinc-600 focus:outline-none"
+                          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
                         />
-                        <div className="mt-2">
-                          <SliderRow label="Overlay opacity" value={config.bgImageOverlay} min={0} max={100} unit="%"
-                            onChange={(v) => update('bgImageOverlay', v)} />
-                        </div>
+                        <SliderRow label="Overlay opacity" value={config.bgImageOverlay} min={0} max={100} unit="%"
+                          onChange={(v) => update('bgImageOverlay', v)} />
                       </div>
                     )}
                   </div>
@@ -616,48 +679,31 @@ export function MenuDesignStudio({ venueId, menu, onClose }: MenuDesignStudioPro
                     <SectionTitle icon={Star}>Hero section</SectionTitle>
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-[11px] text-zinc-400">Enable hero</span>
-                      <button
-                        type="button"
-                        onClick={() => update('heroEnabled', !config.heroEnabled)}
-                        className={cn(
-                          'w-9 h-5 rounded-full transition-all relative',
-                          config.heroEnabled ? 'bg-indigo-600' : 'bg-zinc-700',
-                        )}
-                      >
-                        <span className={cn(
-                          'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all',
-                          config.heroEnabled ? 'left-4' : 'left-0.5',
-                        )} />
-                      </button>
+                      <Toggle value={config.heroEnabled} onChange={(v) => update('heroEnabled', v)} />
                     </div>
                     {config.heroEnabled && (
                       <div className="space-y-2.5">
                         <ColorSwatch value={config.heroBgColor} onChange={(v) => update('heroBgColor', v)} label="Hero background" />
-                        <div>
-                          <span className="text-[11px] text-zinc-400 block mb-1">Title</span>
-                          <input type="text" value={config.heroTitle} placeholder="Our Menu"
-                            onChange={(e) => update('heroTitle', e.target.value)}
-                            className="w-full h-8 rounded-lg bg-white/5 border border-white/10 text-[11px] text-zinc-200 px-2.5 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/50" />
-                        </div>
-                        <div>
-                          <span className="text-[11px] text-zinc-400 block mb-1">Subtitle</span>
-                          <input type="text" value={config.heroSubtitle} placeholder="Crafted with passion"
-                            onChange={(e) => update('heroSubtitle', e.target.value)}
-                            className="w-full h-8 rounded-lg bg-white/5 border border-white/10 text-[11px] text-zinc-200 px-2.5 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/50" />
-                        </div>
-                        <div>
-                          <span className="text-[11px] text-zinc-400 block mb-1">Hero image URL</span>
-                          <input type="text" value={config.heroImageUrl} placeholder="https://..."
-                            onChange={(e) => update('heroImageUrl', e.target.value)}
-                            className="w-full h-8 rounded-lg bg-white/5 border border-white/10 text-[11px] text-zinc-200 px-2.5 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/50" />
-                        </div>
+                        {([
+                          { key: 'heroTitle' as const, placeholder: 'Our Menu', label: 'Title' },
+                          { key: 'heroSubtitle' as const, placeholder: 'Crafted with passion', label: 'Subtitle' },
+                          { key: 'heroImageUrl' as const, placeholder: 'https://…', label: 'Hero image URL' },
+                        ] as const).map(({ key, placeholder, label }) => (
+                          <div key={key}>
+                            <span className="text-[11px] text-zinc-400 block mb-1">{label}</span>
+                            <input type="text" value={config[key]} placeholder={placeholder}
+                              onChange={(e) => update(key, e.target.value)}
+                              className="w-full h-8 rounded-lg text-[11px] text-zinc-200 px-2.5 placeholder:text-zinc-600 focus:outline-none"
+                              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
                 </>
               )}
 
-              {/* ── Colors tab ────────────────────────────────────────────── */}
+              {/* ── COLORS ───────────────────────────────────────────────── */}
               {tab === 'colors' && (
                 <>
                   <div>
@@ -667,15 +713,27 @@ export function MenuDesignStudio({ venueId, menu, onClose }: MenuDesignStudioPro
                       <ColorSwatch value={config.priceColor} onChange={(v) => update('priceColor', v)} label="Price colour" />
                     </div>
                   </div>
-
                   <div>
-                    <SectionTitle icon={Type}>Text colours</SectionTitle>
+                    <SectionTitle icon={Layout}>Top bar</SectionTitle>
+                    <div className="space-y-2.5">
+                      <ColorSwatch value={config.topBarBgColor} onChange={(v) => update('topBarBgColor', v)} label="Top bar background" />
+                      <ColorSwatch value={config.topBarTextColor} onChange={(v) => update('topBarTextColor', v)} label="Top bar text" />
+                    </div>
+                  </div>
+                  <div>
+                    <SectionTitle icon={Type}>Text</SectionTitle>
                     <div className="space-y-2.5">
                       <ColorSwatch value={config.headingColor} onChange={(v) => update('headingColor', v)} label="Headings" />
                       <ColorSwatch value={config.bodyColor} onChange={(v) => update('bodyColor', v)} label="Body / description" />
                     </div>
                   </div>
-
+                  <div>
+                    <SectionTitle icon={Star}>Actions</SectionTitle>
+                    <div className="space-y-2.5">
+                      <ColorSwatch value={config.ctaBgColor} onChange={(v) => update('ctaBgColor', v)} label="Add to cart background" />
+                      <ColorSwatch value={config.ctaTextColor} onChange={(v) => update('ctaTextColor', v)} label="Add to cart text" />
+                    </div>
+                  </div>
                   <div>
                     <SectionTitle icon={Square}>Cards</SectionTitle>
                     <div className="space-y-2.5">
@@ -683,7 +741,6 @@ export function MenuDesignStudio({ venueId, menu, onClose }: MenuDesignStudioPro
                       <ColorSwatch value={config.cardBorderColor} onChange={(v) => update('cardBorderColor', v)} label="Card border" />
                     </div>
                   </div>
-
                   <div>
                     <SectionTitle icon={Layers}>Categories</SectionTitle>
                     <div className="space-y-2.5">
@@ -691,109 +748,97 @@ export function MenuDesignStudio({ venueId, menu, onClose }: MenuDesignStudioPro
                       <ColorSwatch value={config.categoryTextColor} onChange={(v) => update('categoryTextColor', v)} label="Category text" />
                     </div>
                   </div>
-                </>
-              )}
-
-              {/* ── Typography tab ────────────────────────────────────────── */}
-              {tab === 'typography' && (
-                <>
                   <div>
-                    <SectionTitle icon={Type}>Font family</SectionTitle>
-                    <div className="space-y-1">
-                      {FONT_OPTIONS.map((font) => (
-                        <button
-                          key={font}
-                          type="button"
-                          onClick={() => update('fontFamily', font)}
-                          className={cn(
-                            'w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all border',
-                            config.fontFamily === font
-                              ? 'bg-indigo-600/20 border-indigo-500/40 text-white'
-                              : 'bg-white/3 border-transparent text-zinc-400 hover:bg-white/8 hover:text-zinc-200',
-                          )}
-                          style={{ fontFamily: font }}
-                        >
-                          <span>{font}</span>
-                          {config.fontFamily === font && <Check className="h-3.5 w-3.5 text-indigo-400" />}
-                        </button>
-                      ))}
+                    <SectionTitle icon={Layout}>Section tabs bar</SectionTitle>
+                    <div className="space-y-2.5">
+                      <ColorSwatch value={config.navBgColor} onChange={(v) => update('navBgColor', v)} label="Tabs bar background" />
+                      <ColorSwatch value={config.navInactiveTextColor} onChange={(v) => update('navInactiveTextColor', v)} label="Inactive tab text" />
+                      <ColorSwatch value={config.navActiveBgColor} onChange={(v) => update('navActiveBgColor', v)} label="Active tab background" />
+                      <ColorSwatch value={config.navActiveTextColor} onChange={(v) => update('navActiveTextColor', v)} label="Active tab text" />
                     </div>
                   </div>
                 </>
               )}
 
-              {/* ── Layout tab ────────────────────────────────────────────── */}
+              {/* ── TYPOGRAPHY ───────────────────────────────────────────── */}
+              {tab === 'typography' && (
+                <div>
+                  <SectionTitle icon={Type}>Font family</SectionTitle>
+                  <div className="space-y-1">
+                    {FONT_OPTIONS.map((font) => (
+                      <button
+                        key={font}
+                        type="button"
+                        onClick={() => update('fontFamily', font)}
+                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all border"
+                        style={config.fontFamily === font
+                          ? { background: BRAND_BG, borderColor: BRAND_BORDER, color: '#fff', fontFamily: font }
+                          : { background: 'rgba(255,255,255,0.03)', borderColor: 'transparent', color: '#71717a', fontFamily: font }}
+                      >
+                        <span>{font}</span>
+                        {config.fontFamily === font && <Check className="h-3.5 w-3.5" style={{ color: BRAND }} />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── LAYOUT ───────────────────────────────────────────────── */}
               {tab === 'layout' && (
                 <>
                   <div>
                     <SectionTitle icon={Layout}>Item layout</SectionTitle>
                     <OptionGrid
                       options={[
-                        { value: 'list', label: 'List' },
-                        { value: 'grid', label: 'Grid' },
-                        { value: 'compact', label: 'Compact' },
+                        { value: 'list' as const, label: 'List' },
+                        { value: 'grid' as const, label: 'Grid' },
+                        { value: 'compact' as const, label: 'Compact' },
                       ]}
                       value={config.layout}
                       onChange={(v) => update('layout', v)}
                     />
                   </div>
-
                   <div>
                     <SectionTitle icon={Layers}>Category style</SectionTitle>
                     <OptionGrid
                       options={[
-                        { value: 'pill', label: 'Pill badge' },
-                        { value: 'underline', label: 'Underline' },
-                        { value: 'banner', label: 'Banner' },
-                        { value: 'minimal', label: 'Minimal' },
+                        { value: 'pill' as const, label: 'Pill badge' },
+                        { value: 'underline' as const, label: 'Underline' },
+                        { value: 'banner' as const, label: 'Banner' },
+                        { value: 'minimal' as const, label: 'Minimal' },
                       ]}
                       value={config.categoryStyle}
                       onChange={(v) => update('categoryStyle', v)}
                     />
                   </div>
-
                   <div>
                     <SectionTitle icon={Square}>Card style</SectionTitle>
                     <OptionGrid
                       options={[
-                        { value: 'flat', label: 'Flat' },
-                        { value: 'shadow', label: 'Shadow' },
-                        { value: 'border', label: 'Border' },
-                        { value: 'glass', label: 'Glass' },
+                        { value: 'flat' as const, label: 'Flat' },
+                        { value: 'shadow' as const, label: 'Shadow' },
+                        { value: 'border' as const, label: 'Border' },
+                        { value: 'glass' as const, label: 'Glass' },
                       ]}
                       value={config.cardStyle}
                       onChange={(v) => update('cardStyle', v)}
                     />
                   </div>
-
                   <div>
-                    <SectionTitle icon={Sliders}>Card corner radius</SectionTitle>
+                    <SectionTitle icon={Sliders}>Card corners</SectionTitle>
                     <SliderRow label="Radius" value={config.cardRadius} min={0} max={32} unit="px"
                       onChange={(v) => update('cardRadius', v)} />
                   </div>
-
                   <div>
                     <SectionTitle icon={Eye}>Visibility</SectionTitle>
                     <div className="space-y-2.5">
-                      {[
+                      {([
                         { key: 'showImages' as const, label: 'Show item images' },
                         { key: 'showDescriptions' as const, label: 'Show descriptions' },
-                      ].map(({ key, label }) => (
+                      ] as const).map(({ key, label }) => (
                         <div key={key} className="flex items-center justify-between">
                           <span className="text-[11px] text-zinc-400">{label}</span>
-                          <button
-                            type="button"
-                            onClick={() => update(key, !config[key])}
-                            className={cn(
-                              'w-9 h-5 rounded-full transition-all relative',
-                              config[key] ? 'bg-indigo-600' : 'bg-zinc-700',
-                            )}
-                          >
-                            <span className={cn(
-                              'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all',
-                              config[key] ? 'left-4' : 'left-0.5',
-                            )} />
-                          </button>
+                          <Toggle value={config[key]} onChange={(v) => update(key, v)} />
                         </div>
                       ))}
                     </div>
@@ -804,22 +849,30 @@ export function MenuDesignStudio({ venueId, menu, onClose }: MenuDesignStudioPro
           </div>
         )}
 
-        {/* ── Centre: phone preview ────────────────────────────────────────── */}
-        <div className={cn(
-          'flex-1 flex items-center justify-center overflow-auto',
-          'bg-[radial-gradient(ellipse_at_center,_#1a1a2e_0%,_#0a0a0a_70%)]',
-        )}>
+        {/* ── Centre: phone preview ─────────────────────────────────────────── */}
+        <div className="flex-1 flex items-center justify-center overflow-auto"
+          style={{ background: 'radial-gradient(ellipse at center, #1a0e08 0%, #0a0a0a 70%)' }}>
           <div className="py-10">
-            <PhonePreview config={config} menuName={menu.name} />
+            <MenuPreviewPhoneShell>
+              <MenuPreviewContent
+                menu={{ id: menu.id, name: menu.name, description: null }}
+                venueId={venueId}
+                venueName={venueName}
+                menuData={menuData}
+                menuStyle={menuStyle}
+                accentColor={config.accentColor}
+                designConfig={config}
+              />
+            </MenuPreviewPhoneShell>
           </div>
         </div>
 
-        {/* ── Right panel: presets ─────────────────────────────────────────── */}
+        {/* ── Right panel: presets ──────────────────────────────────────────── */}
         {!previewMode && (
           <div className="w-56 shrink-0 border-l overflow-y-auto" style={{ borderColor: '#1e1e1e', background: '#0c0c0c' }}>
             <div className="p-4">
               <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
+                <Sparkles className="h-3.5 w-3.5" style={{ color: BRAND }} />
                 <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">Presets</span>
               </div>
 
@@ -829,40 +882,35 @@ export function MenuDesignStudio({ venueId, menu, onClose }: MenuDesignStudioPro
                     key={preset.name}
                     type="button"
                     onClick={() => applyPreset(preset)}
-                    className="w-full text-left rounded-xl overflow-hidden border border-white/5 hover:border-indigo-500/40 transition-all group hover:shadow-lg hover:shadow-indigo-900/20"
+                    className="w-full text-left rounded-xl overflow-hidden transition-all group"
+                    style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = BRAND_BORDER)}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)')}
                   >
                     {/* Colour swatch strip */}
-                    <div className="h-10 flex" style={{ background: preset.preview.bg }}>
+                    <div className="h-9 flex">
                       <div className="flex-1" style={{ background: preset.preview.bg }} />
                       <div className="w-8" style={{ background: preset.preview.card }} />
-                      <div className="w-6" style={{ background: preset.preview.accent }} />
+                      <div className="w-5" style={{ background: preset.preview.accent }} />
                     </div>
                     {/* Label */}
                     <div className="px-2.5 py-2" style={{ background: '#111' }}>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-base leading-none">{preset.emoji}</span>
-                        <span className="text-[11px] font-semibold text-zinc-200 group-hover:text-white transition-colors">{preset.name}</span>
-                      </div>
-                      <p className="text-[9px] text-zinc-600 mt-0.5 group-hover:text-zinc-500 transition-colors">{preset.description}</p>
+                      <p className="text-[11px] font-semibold text-zinc-200">{preset.name}</p>
+                      <p className="text-[9px] text-zinc-600 mt-0.5">{preset.description}</p>
                     </div>
                   </button>
                 ))}
               </div>
 
-              {/* Current config colour chips */}
-              <div className="mt-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <Palette className="h-3.5 w-3.5 text-zinc-600" />
-                  <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Current palette</span>
-                </div>
+              {/* Palette swatches */}
+              <div className="mt-5">
+                <p className="text-[9px] font-bold text-zinc-600 uppercase tracking-widest mb-2">Current palette</p>
                 <div className="grid grid-cols-5 gap-1.5">
-                  {[
-                    config.bgColor, config.accentColor, config.headingColor,
-                    config.bodyColor, config.priceColor, config.cardBgColor,
-                    config.cardBorderColor, config.categoryBgColor, config.categoryTextColor,
-                    config.heroBgColor,
+                  {[config.bgColor, config.accentColor, config.headingColor, config.bodyColor,
+                    config.priceColor, config.cardBgColor, config.cardBorderColor,
+                    config.categoryBgColor, config.categoryTextColor, config.heroBgColor,
                   ].map((c, i) => (
-                    <div key={i} className="aspect-square rounded-md border border-white/8" style={{ background: c }} title={c} />
+                    <div key={i} className="aspect-square rounded-md" style={{ background: c, border: '1px solid rgba(255,255,255,0.08)' }} title={c} />
                   ))}
                 </div>
               </div>
@@ -871,11 +919,14 @@ export function MenuDesignStudio({ venueId, menu, onClose }: MenuDesignStudioPro
         )}
       </div>
 
-      {/* ── Unsaved changes badge ─────────────────────────────────────────── */}
+      {/* ── Unsaved indicator ────────────────────────────────────────────────── */}
       {isDirty && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium border border-amber-500/30 bg-amber-900/20 text-amber-300 shadow-lg pointer-events-none">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-          Unsaved changes — click "Save design" to persist
+        <div
+          className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium pointer-events-none"
+          style={{ background: 'rgba(210,95,42,0.15)', border: `1px solid ${BRAND_BORDER}`, color: BRAND_LIGHT }}
+        >
+          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: BRAND }} />
+          Unsaved changes — click Save design to persist
         </div>
       )}
     </div>,

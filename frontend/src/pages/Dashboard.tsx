@@ -2017,6 +2017,7 @@ function MenuPreviewModal({
           menuData={menuData}
           menuStyle={menuStyle}
           accentColor={accentColor}
+          designConfig={menu.designConfig ?? null}
         />
       </MenuPreviewPhoneShell>
     </div>,
@@ -3373,7 +3374,10 @@ export default function Dashboard() {
       {designingMenu && selectedVenueId && (
         <MenuDesignStudio
           venueId={selectedVenueId}
-          menu={designingMenu}
+          venueName={venues.find((v) => v.id === selectedVenueId)?.name ?? ''}
+          menuStyle={previewMenuStyle}
+          menuData={menuData}
+          menu={menus.find((m) => m.id === designingMenu.id) ?? designingMenu}
           onClose={() => setDesigningMenu(null)}
         />
       )}
@@ -3390,7 +3394,7 @@ export default function Dashboard() {
       {/* ── Menu public preview (phone frame) ── */}
       {previewMenu && (
         <MenuPreviewModal
-          menu={previewMenu}
+          menu={menus.find((m) => m.id === previewMenu.id) ?? previewMenu}
           venueId={selectedVenueId!}
           menuData={menuData}
           venueName={venues.find((v) => v.id === selectedVenueId)?.name ?? ''}
