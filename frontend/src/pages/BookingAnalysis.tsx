@@ -25,6 +25,20 @@ function readSavedTables(venueId: string | null | undefined): FPTable[] {
   return [];
 }
 
+function readSavedLayout(venueId: string | null | undefined): { tables: FPTable[]; sections: Array<{ id: string; label: string; x: number; y: number }> } {
+  try {
+    const raw = localStorage.getItem(floorStorageKey(venueId));
+    if (!raw) return { tables: [], sections: [] };
+    const parsed = JSON.parse(raw);
+    return {
+      tables: parsed?.tables ?? [],
+      sections: parsed?.sections ?? [],
+    };
+  } catch {
+    return { tables: [], sections: [] };
+  }
+}
+
 function buildSectionsFromTables(tables: FPTable[]) {
   const defaults: Record<string, { x: number; y: number }> = {
     'Main Floor': { x: 40, y: 46 },
@@ -40,8 +54,21 @@ function buildSectionsFromTables(tables: FPTable[]) {
   }));
 }
 
+function mergeSectionsWithSaved(
+  tables: FPTable[],
+  savedSections: Array<{ id: string; label: string; x: number; y: number }>,
+) {
+  const generated = buildSectionsFromTables(tables);
+  const byLabel = new Map(savedSections.map((s) => [s.label, s]));
+  return generated.map((g) => {
+    const saved = byLabel.get(g.label);
+    return saved ? { ...g, x: saved.x, y: saved.y } : g;
+  });
+}
+
 function persistLayoutToLocal(tables: FPTable[], venueId: string | null | undefined) {
-  const sections = buildSectionsFromTables(tables);
+  const { sections: savedSections } = readSavedLayout(venueId);
+  const sections = mergeSectionsWithSaved(tables, savedSections);
   try {
     localStorage.setItem(floorStorageKey(venueId), JSON.stringify({ tables, sections }));
   } catch { /* ignore quota / private mode */ }

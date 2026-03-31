@@ -465,10 +465,12 @@ function TableNode({ table, selected, multiSelected, editMode, cleaningTimerMinu
         {/* Auto-status badge */}
         {!editMode && table.autoStatus && (
           <span style={{
-            position: 'absolute', top: isRound ? 4 : 3, left: isRound ? 4 : 3,
+            // Keep the auto-status chip away from round-table clipping/chair overlap.
+            position: 'absolute', top: isRound ? 9 : 3, left: isRound ? 9 : 3,
             width: 12, height: 12, borderRadius: '50%', background: '#10b981',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 0 4px rgba(16,185,129,0.4)',
+            zIndex: 2,
           }}>
             <Zap style={{ width: 7, height: 7, color: 'white' }} />
           </span>
@@ -1469,12 +1471,15 @@ export function FloorPlanEditor({
       const cr  = canvasRef.current.getBoundingClientRect();
       const er  = el.getBoundingClientRect();
       const cx  = er.left - cr.left + er.width / 2 + canvasRef.current.scrollLeft;
-      const cy  = er.top  - cr.top  + canvasRef.current.scrollTop;
+      const topY = er.top - cr.top + canvasRef.current.scrollTop;
+      const bottomY = er.bottom - cr.top + canvasRef.current.scrollTop;
       const tipW = 208;
+      const TIP_FLIP_THRESHOLD = 120;
+      const showBelow = topY < TIP_FLIP_THRESHOLD;
       setTooltipStyle({
         left: Math.min(Math.max(cx - tipW / 2, 4), CANVAS_W - tipW - 4),
-        top:  Math.max(cy - 8, 4),
-        transform: 'translateY(-100%)',
+        top: showBelow ? bottomY + 8 : Math.max(topY - 8, 4),
+        transform: showBelow ? 'none' : 'translateY(-100%)',
       });
     }
   }

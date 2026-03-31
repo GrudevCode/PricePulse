@@ -175,7 +175,8 @@ export const bookingApi = {
   setAutoStatus:  (venueId: string, tableId: string, autoStatus: boolean) => api.patch(`/venues/${venueId}/tables/${tableId}/auto-status`, { autoStatus }),
   orderHistory:   (venueId: string, params: Record<string, unknown>) => api.get(`/venues/${venueId}/bookings/order-history`, { params }),
   getCleaningTimer: (venueId: string) => api.get(`/venues/${venueId}/cleaning-timer`),
-  setCleaningTimer: (venueId: string, minutes: number) => api.patch(`/venues/${venueId}/cleaning-timer`, { minutes }),
+  setCleaningTimer: (venueId: string, minutes: number) =>
+    api.patch(`/venues/${venueId}/cleaning-timer`, { cleaningTimerMinutes: minutes }),
 };
 
 export const inventoryApi = {
