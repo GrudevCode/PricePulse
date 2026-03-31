@@ -10,7 +10,7 @@ import {
   SelectLabel, SelectSeparator, SelectGroup,
 } from '@/components/ui/select';
 import {
-  Plus, Trash2, Search, X, Users, MapPin, AlertCircle, Clock,
+  Plus, Trash2, Search, X, Users, MapPin, AlertCircle, Clock, Receipt,
 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -55,19 +55,19 @@ function mapPosStatus(s: 'open' | 'parked' | 'closed' | 'voided'): OrderStatus {
 }
 
 const STATUS_BADGE: Record<OrderStatus, string> = {
-  new: 'text-blue-700 bg-blue-50 border-blue-200',
+  new:       'text-blue-700 bg-blue-50 border-blue-200',
   preparing: 'text-amber-700 bg-amber-50 border-amber-200',
-  served: 'text-purple-700 bg-purple-50 border-purple-200',
-  paid: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+  served:    'text-purple-700 bg-purple-50 border-purple-200',
+  paid:      'text-emerald-700 bg-emerald-50 border-emerald-200',
   cancelled: 'text-red-700 bg-red-50 border-red-200',
 };
 
-const STATUS_DOT: Record<OrderStatus, string> = {
-  new: 'bg-blue-500',
-  preparing: 'bg-amber-500',
-  served: 'bg-purple-500',
-  paid: 'bg-emerald-500',
-  cancelled: 'bg-red-500',
+const STATUS_LEFT: Record<OrderStatus, string> = {
+  new:       'border-l-blue-400',
+  preparing: 'border-l-amber-400',
+  served:    'border-l-purple-500',
+  paid:      'border-l-emerald-400',
+  cancelled: 'border-l-red-300',
 };
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -84,7 +84,6 @@ export default function OrderEditor() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form
   const [customerName, setCustomerName] = useState('');
   const [tableNumber, setTableNumber] = useState('');
   const [covers, setCovers] = useState('2');
@@ -92,11 +91,9 @@ export default function OrderEditor() {
   const [items, setItems] = useState<OrderItem[]>([{ name: '', qty: 1, unitPricePence: 0 }]);
   const [appendToOrderId, setAppendToOrderId] = useState<string | null>(null);
 
-  // Sources
   const [tables, setTables] = useState<TableOption[]>([]);
   const [menuItems, setMenuItems] = useState<MenuOption[]>([]);
 
-  // Filters — auto-populated from ?table= query param (deep-link from floor plan)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('table') ?? '');
 
@@ -130,11 +127,10 @@ export default function OrderEditor() {
   }, [orders, statusFilter, searchQuery]);
 
   const stats = useMemo(() => ({
-    total: orders.length,
-    new: orders.filter((o) => o.status === 'new').length,
+    total:     orders.length,
+    new:       orders.filter((o) => o.status === 'new').length,
     preparing: orders.filter((o) => o.status === 'preparing').length,
-    paid: orders.filter((o) => o.status === 'paid').length,
-    revenue: orders.filter((o) => o.status === 'paid').reduce((s, o) => s + o.totalPence, 0),
+    revenue:   orders.filter((o) => o.status === 'paid').reduce((s, o) => s + o.totalPence, 0),
   }), [orders]);
 
   /* ── Data ── */
@@ -304,6 +300,10 @@ export default function OrderEditor() {
     setItems([{ name: '', qty: 1, unitPricePence: 0 }]);
   }
 
+  /* ── Shared style helpers ── */
+  const inputCls = 'w-full h-8 text-xs border border-border rounded-lg px-2.5 bg-white outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-colors';
+  const labelCls = 'block text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5';
+
   /* ══════════════════════════════════════════════════════════════════════
      Render
      ══════════════════════════════════════════════════════════════════════ */
@@ -314,20 +314,38 @@ export default function OrderEditor() {
 
         {/* ── Header ── */}
         <header className="h-12 bg-white border-b border-border flex items-center px-5 gap-4 shrink-0">
+          <Receipt className="w-4 h-4 text-muted-foreground/50 shrink-0" />
           <h1 className="text-sm font-semibold">Order Editor</h1>
           <div className="h-4 w-px bg-border" />
 
-          {/* Stats */}
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span>{stats.total} orders</span>
-            <span className="text-amber-600 font-medium">{stats.preparing} preparing</span>
-            <span className="text-emerald-600 font-medium">{fmt(stats.revenue)} revenue</span>
+          {/* Live stat chips */}
+          <div className="flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full bg-gray-100 border border-gray-200 text-[10px] font-medium text-gray-600">
+              {stats.total} orders
+            </span>
+            {stats.new > 0 && (
+              <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full bg-blue-50 border border-blue-200 text-[10px] font-medium text-blue-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                {stats.new} new
+              </span>
+            )}
+            {stats.preparing > 0 && (
+              <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full bg-amber-50 border border-amber-200 text-[10px] font-medium text-amber-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                {stats.preparing} preparing
+              </span>
+            )}
+            {stats.revenue > 0 && (
+              <span className="inline-flex items-center h-5 px-2 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-medium text-emerald-700">
+                {fmt(stats.revenue)} revenue
+              </span>
+            )}
           </div>
 
           <div className="ml-auto flex items-center gap-2">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               <input
                 className="h-8 w-48 pl-8 pr-7 rounded-lg border bg-muted/30 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 focus:bg-white transition-colors"
                 placeholder="Search orders…"
@@ -363,7 +381,7 @@ export default function OrderEditor() {
 
         {/* Error banner */}
         {error && (
-          <div className="px-4 py-2 bg-red-50 border-b border-red-200 flex items-center gap-2 text-xs text-red-700">
+          <div className="px-5 py-2 bg-red-50 border-b border-red-200 flex items-center gap-2 text-xs text-red-700 shrink-0">
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             <span className="flex-1">{error}</span>
             <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">
@@ -376,11 +394,11 @@ export default function OrderEditor() {
         <div className="flex-1 flex min-h-0">
 
           {/* ════════════ LEFT — Create Order Form ════════════ */}
-          <aside className="w-[380px] bg-white border-r border-border flex flex-col shrink-0">
-            <div className="px-4 pt-4 pb-3 border-b border-border/50">
+          <aside className="w-[360px] bg-white border-r border-border flex flex-col shrink-0">
+            <div className="px-4 pt-4 pb-3 border-b border-border/60 shrink-0">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold tracking-wide uppercase text-muted-foreground">
-                  {appendToOrderId ? 'Add Items to Order' : 'Create Order'}
+                <span className="text-[10px] font-semibold tracking-widest uppercase text-gray-400">
+                  {appendToOrderId ? 'Add Items to Order' : 'New Order'}
                 </span>
                 {appendToOrderId && (
                   <button onClick={cancelAppend} className="text-[11px] text-primary hover:underline font-medium">
@@ -389,30 +407,29 @@ export default function OrderEditor() {
                 )}
               </div>
               {appendToOrderId && (
-                <p className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 mt-2">
-                  Adding extra items to a preparing order. Submit to append.
+                <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 mt-2">
+                  Adding items to a preparing order — submit to append.
                 </p>
               )}
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-              {/* Customer + Table + Covers */}
               {!appendToOrderId && (
                 <>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Customer Name</label>
+                    <label className={labelCls}>Customer Name</label>
                     <input
-                      className="w-full h-9 border rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      className={inputCls}
                       placeholder="Walk-in"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                     />
                   </div>
-                  <div className="grid grid-cols-[1fr_100px] gap-2">
+                  <div className="grid grid-cols-[1fr_88px] gap-2">
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Table</label>
+                      <label className={labelCls}>Table</label>
                       <Select value={tableNumber || '__none__'} onValueChange={(v) => handleSelectTable(v === '__none__' ? '' : v)}>
-                        <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select table" /></SelectTrigger>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select table" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none__">No table</SelectItem>
                           {tables.map((t) => (
@@ -424,18 +441,18 @@ export default function OrderEditor() {
                       </Select>
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Covers</label>
+                      <label className={labelCls}>Covers</label>
                       <input
-                        className="w-full h-9 border rounded-lg px-3 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className={cn(inputCls, 'text-center')}
                         type="number" min={1} value={covers}
                         onChange={(e) => setCovers(e.target.value)}
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Notes</label>
+                    <label className={labelCls}>Notes</label>
                     <textarea
-                      className="w-full border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      className="w-full border border-border rounded-lg px-2.5 py-2 text-xs resize-none bg-white outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-colors"
                       rows={2} placeholder="Special instructions…"
                       value={notes} onChange={(e) => setNotes(e.target.value)}
                     />
@@ -445,10 +462,10 @@ export default function OrderEditor() {
 
               {/* Line items */}
               <div>
-                <label className="text-xs font-medium text-muted-foreground mb-2 block">Items</label>
+                <label className={labelCls}>Items</label>
                 <div className="space-y-2">
                   {items.map((it, idx) => (
-                    <div key={idx} className="rounded-xl border bg-muted/20 p-2.5 space-y-1.5">
+                    <div key={idx} className="rounded-xl border border-border bg-muted/20 p-2.5 space-y-1.5">
                       <div className="flex gap-1.5">
                         <Select
                           value={it.menuItemId ?? '__none__'}
@@ -479,14 +496,14 @@ export default function OrderEditor() {
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      <div className="grid grid-cols-[60px_1fr_80px] gap-1.5 items-center">
+                      <div className="grid grid-cols-[56px_1fr_72px] gap-1.5 items-center">
                         <input
-                          className="h-7 border rounded-md px-2 text-[11px] text-center focus:outline-none focus:ring-1 focus:ring-primary/20"
+                          className="h-7 border border-border rounded-md px-2 text-[11px] text-center bg-white outline-none focus:ring-1 focus:ring-primary/20"
                           type="number" min={1} placeholder="Qty"
                           value={it.qty}
                           onChange={(e) => setItems((p) => p.map((x, i) => i === idx ? { ...x, qty: Math.max(1, Number(e.target.value) || 1) } : x))}
                         />
-                        <div className="text-[11px] text-muted-foreground truncate">
+                        <div className="text-[11px] text-muted-foreground truncate px-1">
                           {it.name || 'No item selected'}
                         </div>
                         <div className="text-[11px] font-semibold text-right tabular-nums">
@@ -496,25 +513,24 @@ export default function OrderEditor() {
                     </div>
                   ))}
                 </div>
-
                 <button
                   onClick={() => setItems((p) => [...p, { name: '', qty: 1, unitPricePence: 0 }])}
-                  className="mt-2 h-8 px-3 text-xs border border-dashed rounded-lg inline-flex items-center gap-1 text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+                  className="mt-2 h-8 px-3 text-xs border border-dashed border-border rounded-lg inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add line
                 </button>
               </div>
             </div>
 
-            {/* Submit */}
-            <div className="px-4 py-3 border-t border-border/50 space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-muted-foreground">Order Total</span>
-                <span className="font-bold tabular-nums">{fmt(draftTotal)}</span>
+            {/* Submit footer */}
+            <div className="px-4 py-3 border-t border-border/60 space-y-2.5 shrink-0">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground">Order Total</span>
+                <span className="text-base font-bold tabular-nums">{fmt(draftTotal)}</span>
               </div>
               <button
                 onClick={() => void createOrder()}
-                className="w-full h-10 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 active:scale-[0.98] transition-all"
+                className="w-full h-9 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary/90 active:scale-[0.98] transition-all"
               >
                 {appendToOrderId ? 'Add Items to Order' : 'Create Order'}
               </button>
@@ -524,12 +540,14 @@ export default function OrderEditor() {
           {/* ════════════ RIGHT — Live Orders ════════════ */}
           <main className="flex-1 overflow-y-auto bg-muted/20 p-4">
             {loading ? (
-              <div className="flex items-center justify-center h-full">
+              <div className="flex items-center justify-center h-32">
                 <p className="text-sm text-muted-foreground">Loading orders…</p>
               </div>
             ) : filteredOrders.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full">
-                <Clock className="w-8 h-8 text-muted-foreground/20 mb-2" />
+              <div className="flex flex-col items-center justify-center h-full gap-2">
+                <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-muted-foreground/40" />
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {searchQuery || statusFilter !== 'all' ? 'No orders match your filters' : 'No orders yet today'}
                 </p>
@@ -549,25 +567,26 @@ export default function OrderEditor() {
                         setCovers(String(o.covers ?? 1));
                       }}
                       className={cn(
-                        'rounded-xl border bg-white p-4 transition-all',
-                        isPreparing && 'cursor-pointer hover:border-primary/40 hover:shadow-md',
+                        'rounded-xl border border-l-4 bg-white p-4 transition-all',
+                        STATUS_LEFT[o.status],
+                        isPreparing && 'cursor-pointer hover:shadow-md hover:border-primary/30',
+                        appendToOrderId === o.id && 'ring-2 ring-primary/30',
                       )}
                     >
-                      {/* Header */}
-                      <div className="flex items-start gap-2 mb-2">
-                        <div className={cn('w-1.5 h-1.5 rounded-full mt-1.5 shrink-0', STATUS_DOT[o.status])} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold truncate">
+                      {/* Header row */}
+                      <div className="flex items-start justify-between gap-2 mb-2.5">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[13px] font-semibold text-gray-900 truncate">
                               {o.customerName || 'Walk-in'}
                             </span>
                             {o.source === 'pos' && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700 font-medium shrink-0">
-                                POS {o.posTicketRef}
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700 font-semibold shrink-0 uppercase tracking-wide">
+                                POS · {o.posTicketRef}
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                          <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground mt-0.5 flex-wrap">
                             {o.tableNumber && (
                               <span className="flex items-center gap-0.5">
                                 <MapPin className="w-3 h-3" /> T{o.tableNumber}
@@ -582,18 +601,23 @@ export default function OrderEditor() {
                             </span>
                           </div>
                         </div>
-                        <span className="text-sm font-bold tabular-nums shrink-0">{fmt(o.totalPence)}</span>
+                        <div className="flex flex-col items-end gap-1.5 shrink-0">
+                          <span className={cn('text-[10px] font-semibold rounded-full border px-2 py-0.5 capitalize', STATUS_BADGE[o.status])}>
+                            {o.status}
+                          </span>
+                          <span className="text-sm font-bold tabular-nums text-gray-900">{fmt(o.totalPence)}</span>
+                        </div>
                       </div>
 
-                      {/* Items */}
+                      {/* Items summary */}
                       {o.items.length > 0 && (
-                        <div className="text-xs text-muted-foreground mb-3 pl-3.5 line-clamp-2">
-                          {o.items.map((i) => `${i.qty}× ${i.name}`).join(', ')}
+                        <div className="text-[11px] text-muted-foreground mb-3 bg-muted/30 rounded-lg px-2.5 py-1.5 line-clamp-2">
+                          {o.items.map((i) => `${i.qty}× ${i.name}`).join(' · ')}
                         </div>
                       )}
 
-                      {/* Status buttons */}
-                      <div className="flex items-center gap-1 pl-3.5">
+                      {/* Status action buttons */}
+                      <div className="flex items-center gap-1 flex-wrap">
                         {(o.source === 'pos'
                           ? (['preparing', 'paid', 'cancelled'] as OrderStatus[])
                           : (['new', 'preparing', 'served', 'paid', 'cancelled'] as OrderStatus[])
@@ -605,7 +629,7 @@ export default function OrderEditor() {
                               'text-[10px] px-2.5 py-1 rounded-full border font-medium capitalize transition-all',
                               o.status === s
                                 ? STATUS_BADGE[s]
-                                : 'border-transparent text-muted-foreground hover:bg-muted/50',
+                                : 'border-border text-muted-foreground hover:bg-muted/50',
                             )}
                           >
                             {s}
@@ -614,8 +638,8 @@ export default function OrderEditor() {
                       </div>
 
                       {isPreparing && (
-                        <p className="text-[10px] text-primary mt-2 pl-3.5 font-medium">
-                          Click to add extra items
+                        <p className="text-[10px] text-primary mt-2 font-medium flex items-center gap-1">
+                          <Plus className="w-3 h-3" /> Click to add extra items
                         </p>
                       )}
                     </div>

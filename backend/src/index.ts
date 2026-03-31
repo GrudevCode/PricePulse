@@ -36,8 +36,15 @@ const httpServer = createServer(app);
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
 app.use(helmet({ contentSecurityPolicy: false }));
+const _allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
+  .split(',').map((o) => o.trim()).filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, cb) => {
+    // Allow server-to-server requests (no Origin header) and listed origins
+    if (!origin || _allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error(`CORS: origin "${origin}" not allowed`));
+  },
   credentials: true,
 }));
 app.use(morgan('dev'));
