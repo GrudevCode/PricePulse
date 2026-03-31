@@ -39,6 +39,7 @@ function isRenderableImage(value?: string | null): boolean {
 }
 
 function PreviewProductItem({ product }: { product: MenuPreviewItemRow }) {
+  const [imgFailed, setImgFailed] = useState(false);
   const { data: names = [] } = useQuery<string[]>({
     queryKey: ['preview-ingredients', product.id],
     queryFn: async () => {
@@ -55,11 +56,12 @@ function PreviewProductItem({ product }: { product: MenuPreviewItemRow }) {
     <div className="px-4 py-3">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          {product.displayImage !== false && isRenderableImage(product.imageUrl) && (
+          {product.displayImage !== false && isRenderableImage(product.imageUrl) && !imgFailed && (
             <img
               src={product.imageUrl!.trim()}
               alt=""
               loading="lazy"
+              onError={() => setImgFailed(true)}
               className="h-9 w-9 shrink-0 rounded object-cover ring-1 ring-gray-200"
             />
           )}
@@ -87,8 +89,9 @@ function FastFoodMenuCard({
   accentColor: string;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
   const raw = product.imageUrl?.trim() ?? '';
-  const imgOk = product.displayImage !== false && isRenderableImage(raw);
+  const imgOk = product.displayImage !== false && isRenderableImage(raw) && !imgFailed;
 
   return (
     <article
@@ -98,7 +101,13 @@ function FastFoodMenuCard({
       )}
     >
       {imgOk ? (
-        <img src={raw} alt="" className="absolute inset-0 size-full object-cover" loading="lazy" />
+        <img
+          src={raw}
+          alt=""
+          className="absolute inset-0 size-full object-cover"
+          loading="lazy"
+          onError={() => setImgFailed(true)}
+        />
       ) : (
         <div
           className="absolute inset-0"

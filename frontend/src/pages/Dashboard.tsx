@@ -607,6 +607,30 @@ function poundsInputToPence(input: string, fallbackPence: number): number {
   return Math.round(n * 100);
 }
 
+function isDataImage(value: string): boolean {
+  return /^data:image\//i.test(value.trim());
+}
+
+function isHttpUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value.trim());
+}
+
+async function canLoadImageUrl(url: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const timer = window.setTimeout(() => resolve(false), 5000);
+    img.onload = () => {
+      window.clearTimeout(timer);
+      resolve(true);
+    };
+    img.onerror = () => {
+      window.clearTimeout(timer);
+      resolve(false);
+    };
+    img.src = url;
+  });
+}
+
 function EditMasterProductModal({
   item,
   venueId,
@@ -686,12 +710,25 @@ function EditMasterProductModal({
       return;
     }
 
+    const trimmedImage = imageUrl.trim();
+    if (trimmedImage && !isDataImage(trimmedImage) && !isHttpUrl(trimmedImage)) {
+      toast.error('Image must be a direct image URL or uploaded image data');
+      return;
+    }
+    if (trimmedImage && isHttpUrl(trimmedImage)) {
+      const ok = await canLoadImageUrl(trimmedImage);
+      if (!ok) {
+        toast.error('Image URL is not loadable. Use a direct image link (right-click image -> Copy image address).');
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const res = await menuApi.update(venueId, item.id, {
         name: trimmedName,
         description: description.trim() || undefined,
-        imageUrl: imageUrl.trim() || null,
+        imageUrl: trimmedImage || null,
         displayImage,
         currentPrice: refPence,
         basePrice: refPence,
@@ -1033,11 +1070,24 @@ function ProductSettingsModal({
   }
 
   async function handleSave() {
+    const trimmedImage = imageUrl.trim();
+    if (trimmedImage && !isDataImage(trimmedImage) && !isHttpUrl(trimmedImage)) {
+      toast.error('Image must be a direct image URL or uploaded image data');
+      return;
+    }
+    if (trimmedImage && isHttpUrl(trimmedImage)) {
+      const ok = await canLoadImageUrl(trimmedImage);
+      if (!ok) {
+        toast.error('Image URL is not loadable. Use a direct image link (right-click image -> Copy image address).');
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const res = await menuApi.update(venueId, item.id, {
         isAvailable: isVisible,
-        imageUrl: imageUrl.trim() || null,
+        imageUrl: trimmedImage || null,
         displayImage,
       });
       const updated: MenuItem = res.data.data;
